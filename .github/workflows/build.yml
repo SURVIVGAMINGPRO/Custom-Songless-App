@@ -1,0 +1,93 @@
+name: Build apps
+
+# Builds the macOS app (universal: Apple Silicon + Intel) and the Windows
+# installer, MSI and portable .exe on GitHub's machines. Run it from the
+# Actions tab ("Run workflow"), or push a tag like v1.0.0: a tag also
+# publishes a GitHub Release with the file names the README links to.
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            args: --target universal-apple-darwin
+            rust_targets: aarch64-apple-darwin,x86_64-apple-darwin
+          - platform: windows-latest
+            args: ''
+            rust_targets: ''
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust_targets }}
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+
+      - name: Build the app
+        run: npx tauri build ${{ matrix.args }}
+        env:
+          CI: true
+
+      - name: Collect the macOS file
+        if: runner.os == 'macOS'
+        run: |
+          mkdir out
+          cp src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg out/Earshot-macOS.dmg
+
+      - name: Collect the Windows files
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          mkdir out
+          cp src-tauri/target/release/bundle/nsis/*-setup.exe out/Earshot-Windows-setup.exe
+          cp src-tauri/target/release/bundle/msi/*.msi out/Earshot-Windows.msi
+          cp src-tauri/target/release/earshot.exe out/Earshot-Windows-portable.exe
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: earshot-${{ runner.os }}
+          path: out/*
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="$GITHUB_REF_NAME"
+          awk '/^## /{n++} n==1' CHANGELOG.md > notes.md
+          gh release view "$tag" > /dev/null 2>&1 || gh release create "$tag" --title "Earshot ${tag#v}" --notes-file notes.md
+          gh release upload "$tag" dist/* --clobber

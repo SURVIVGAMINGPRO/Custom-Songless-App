@@ -1,0 +1,56 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Earshot",
+  "version": "1.0.0",
+  "identifier": "com.earshot.game",
+  "build": {
+    "frontendDist": "../build",
+    "devUrl": "http://localhost:5173",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build"
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "windows": [
+      {
+        "label": "main",
+        "title": "Earshot",
+        "width": 1180,
+        "height": 840,
+        "minWidth": 380,
+        "minHeight": 600,
+        "center": true,
+        "dragDropEnabled": false,
+        "backgroundColor": "#101012"
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' data: https://*.dzcdn.net https://api.deezer.com; media-src 'self' blob: https://*.dzcdn.net; connect-src 'self' ipc: http://ipc.localhost https://*.dzcdn.net; style-src 'self' 'unsafe-inline'; font-src 'self' data:"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "category": "MusicGame",
+    "shortDescription": "Guess songs from your own playlists",
+    "longDescription": "Turn your playlists into a song guessing game: hear a tenth of a second, guess, and get a longer clip after every miss.",
+    "copyright": "",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "macOS": {
+      "minimumSystemVersion": "10.15"
+    },
+    "windows": {
+      "webviewInstallMode": { "type": "downloadBootstrapper" },
+      "nsis": {
+        "installMode": "currentUser",
+        "displayLanguageSelector": false
+      }
+    }
+  }
+}

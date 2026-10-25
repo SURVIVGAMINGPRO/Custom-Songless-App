@@ -1,0 +1,91 @@
+# CLAUDE.md: Custom Songless App (Earshot)
+
+A song guessing game built from the user's **own playlists** (shown as **Earshot**, `APP_NAME` in
+`src/lib/config.ts`). Desktop app for macOS and Windows (Tauri 2) around a SvelteKit 3 + Svelte 5 +
+TypeScript UI, which also runs as a web app. Public repo: never commit secrets, real names, emails or local paths.
+
+## Hard rules
+
+1. **The user's playlists are the point.** Home is their playlist library; pressing a cover plays that playlist.
+   Endless is the main mode; "Today's song" is secondary.
+2. **No Spotify API, no scraping Spotify.** Spotify's developer policy bans games. Spotify playlists only come in
+   as CSV files the user exports themselves (Exportify etc.). Links to `open.spotify.com/track/…` are fine.
+3. **Audio is Deezer's 30 s previews only**, fetched fresh per round (links expire after ~15 min) and kept in
+   memory, never saved. No downloading full songs, no YouTube.
+4. **Deezer goes through `src/lib/sources/deezer-core.ts`**: an allowlist of paths, under 50 requests / 5 s, short
+   cache. The web version calls it from a server route (`src/lib/server/deezer.ts`); the desktop app calls it in
+   the page through Tauri's HTTP plugin (scope in `src-tauri/capabilities/default.json`). Add a path to both the
+   allowlist and, for new hosts, the capability. Deezer's terms: private, non-commercial use.
+5. Everything the user makes lives in IndexedDB (`src/lib/store`). No accounts, no telemetry.
+
+## Game rules (from Songless's own code)
+
+Clip steps `[0.13, 0.53, 2, 8, 15]` s (`DEFAULT_STEPS`), labelled with one decimal ("0.1 seconds"), one row per
+step. A wrong guess or Skip unlocks the next step. Rows: green correct, orange right artist, red wrong, grey
+skipped. Share grid 🟩🟧🟥⬜⬛. A guess is correct if it's the same Deezer ID, the same ISRC, or the same
+normalized title by an overlapping artist (`judge` in `engine.ts`). Behind the scenes every playlist gets its
+own single-playlist game (`gameForPlaylist`); games with 2+ playlists are shown as **Mixes**.
+
+## Layout
+
+```
+src/lib/game/       types, engine (rounds, judging, stats, share), deck (no-repeat shuffle, daily pick), normalize
+src/lib/sources/    deezer (client), deezer-core (shared allowlist/limit/cache), csv, links, match, importer
+src/lib/server/     deezer.ts: the web version's server-side client
+src/lib/audio/      player.svelte.ts (Web Audio clips), silence.ts (skip leading quiet)
+src/lib/store/      db.ts (IndexedDB), library.svelte.ts (all state + actions, autosave)
+src/lib/components/ shared UI (Logo, Mosaic, PlaylistCard, Tabs, Dialog…); play/ holds the play screen pieces
+src/lib/platform.ts desktop detection, opening links, saving files
+src/routes/         / library, /play/[id], /playlists/[id] (or new), /import (Add a playlist),
+                    /games/[id] (mix editor, or new), /stats, /settings, /api/* (web version only)
+src-tauri/          Tauri shell: plugins (http, opener, dialog), save_text_file command, icons, CSP
+scripts/make-icons.mjs  renders the app icon from assets/logo.svg (npm run icons)
+.github/workflows/build.yml  builds macOS + Windows; a v* tag publishes the release
+```
+
+## SvelteKit 3 notes
+
+- Config lives in `vite.config.ts` (`sveltekit({...})`); there is no `svelte.config.js`. With
+  `TAURI_ENV_PLATFORM` set (Tauri's build) it uses adapter-static into `build/`; otherwise adapter-auto.
+- Import from `#lib/...` with the file extension (`#lib/game/engine.ts`), not `$lib`.
+- `$app/state` (not `$app/stores`), `resolve()` from `$app/paths` for links, `Response.json()` not `json()`.
+- `ssr = false` for the whole app (`src/routes/+layout.ts`): pages render in the browser.
+
+## Design ("record shop after hours")
+
+Near-black room, album covers as the colour, the logo's yellow `#ffe042` as the one action colour (buttons, focus,
+progress). Results: green `#3ddc97`, orange `#ff9f45`, red `#ff5468`. Bricolage Grotesque (display) and DM Sans
+(text), both bundled from @fontsource. Every colour, size and duration is a token in `src/app.css`. Motion: the
+VC Alert launch logo (hold, then slide-out-fwd-center), page cross-fades (View Transitions), staggered `.rise`
+entrances, cards that lift, rows that flip/shake/pop, ripple rings and equalizer bars while a clip plays, and the
+answer's record sliding out of its sleeve. Reduced motion turns movement off. Check 375 px wide and 1180 px.
+
+## Versioning and releases
+
+Bump the version in `package.json`, `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json` together, add a
+user-facing entry at the top of `CHANGELOG.md`, then push a tag `vX.Y.Z`. The workflow publishes
+`Earshot-macOS.dmg`, `Earshot-Windows-setup.exe`, `Earshot-Windows.msi` and `Earshot-Windows-portable.exe`;
+the README links to `releases/latest/download/<name>`, so never rename them.
+
+## Commands
+
+```
+npm run dev             # web version, http://localhost:5173 (launch config "app" in .claude/launch.json)
+npx tauri dev           # desktop app
+CI=true npx tauri build --target universal-apple-darwin   # macOS .app + .dmg
+npm test                # vitest
+npm run check           # must be 0 errors, 0 warnings
+npm run icons           # app icon from assets/logo.svg
+```
+
+Rust was installed with rustup without touching the shell profile: prefix cargo/tauri commands with
+`export PATH="$HOME/.cargo/bin:$PATH"`.
+
+## Verified vs not
+
+Verified in a browser (web version): library home, playlist cards, importing Deezer's Top Worldwide chart, a CSV
+import (ISRC and search matching, review list), the playlist builder, playing clips, guesses, skips, win and
+loss, endless and daily rounds, mixes with tabs, stats, 375 px and 1180 px layouts.
+
+Not verified: listening for the exact clip length by ear, a real Exportify export (the test used Exportify's
+column names), Deezer share links (`link.deezer.com`), the Windows app on Windows, Safari and Firefox.

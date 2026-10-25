@@ -1,0 +1,17 @@
+<script lang="ts">
+	// The Earshot logo (assets/logo.svg, Material Symbols "library_music", Apache 2.0).
+	// Decorative wherever it appears, so screen readers skip it.
+	let { size = 32, class: className = '' }: { size?: number; class?: string } = $props();
+</script>
+
+<svg class="logo {className}" width={size} height={size} viewBox="0 -960 960 960" aria-hidden="true" focusable="false">
+	<path d="M530.01-379q42.3 0 71.64-28.57Q631-436.13 631-477.5V-663h73q21.67 0 36.34-14.61 14.66-14.6 14.66-36.2 0-21.59-14.66-36.39Q725.67-765 704-765h-73q-20.37 0-35.19 14.66Q581-735.67 581-714v145q-12.12-5-24.71-9-12.59-4-26.07-4-42.42 0-72.32 29.86-29.9 29.86-29.9 72.15 0 42.3 29.86 71.64Q487.72-379 530.01-379ZM350-217q-52.43 0-90.21-37.79Q222-292.57 222-345v-460q0-52.42 37.79-90.21Q297.57-933 350-933h460q52.42 0 89.71 37.79Q937-857.42 937-805v460q0 52.43-37.29 90.21Q862.42-217 810-217H350Zm0-128h460v-460H350v460ZM150-18q-52.42 0-89.71-37.29Q23-92.58 23-145v-524q0-25.9 18.29-44.95Q59.58-733 86.29-733t45.21 19.05Q150-694.9 150-669v524h524q25.9 0 44.95 18.29 19.05 18.29 19.05 45T718.95-36.5Q699.9-18 674-18H150Zm200-787v460-460Z" />
+</svg>
+
+<style>
+	.logo {
+		display: block;
+		flex: none;
+		fill: var(--accent);
+	}
+</style>
