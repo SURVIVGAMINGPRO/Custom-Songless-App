@@ -31,3 +31,10 @@ vite.config.ts.timestamp-*
 
 # Design tooling cache (holds local paths)
 .impeccable/hook.cache.json
+
+# iPhone app (Xcode and SwiftPM build output, per-user Xcode state)
+/ios/EarshotKit/.build
+/ios/EarshotKit/.swiftpm
+xcuserdata/
+*.xcresult
+DerivedData/

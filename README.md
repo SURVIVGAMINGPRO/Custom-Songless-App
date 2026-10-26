@@ -18,6 +18,8 @@ Both links always download the newest version. Every version is on the
 - **macOS** (Apple Silicon and Intel, macOS 10.15 or newer): open `Earshot-macOS.dmg` and drag Earshot to
   Applications. The app isn't signed with an Apple Developer ID, so the first time macOS blocks it: open
   **System Settings → Privacy & Security**, scroll down and choose **Open Anyway**.
+- **iPhone and iPad** (iOS 18 or newer): there's no App Store version; build it from `ios/` with Xcode (see
+  [Building it yourself](#building-it-yourself)).
 - **Windows** (10 and 11): run `Earshot-Windows-setup.exe`, or use the
   [MSI](https://github.com/SURVIVGAMINGPRO/Custom-Songless-App/releases/latest/download/Earshot-Windows.msi) or the
   [portable .exe](https://github.com/SURVIVGAMINGPRO/Custom-Songless-App/releases/latest/download/Earshot-Windows-portable.exe).
@@ -74,3 +76,21 @@ npm run check          # svelte-check
 
 Pushing a tag like `v1.0.1` makes GitHub build the macOS and Windows apps and publish them as a release
 (`.github/workflows/build.yml`).
+
+### The iPhone app
+
+A native SwiftUI app in `ios/`, with the same rules, playlists and backups as the desktop app (a backup made on one
+opens on the other). Needs Xcode 26 with the iOS platform installed (Xcode → Settings → Components).
+
+```sh
+open ios/Earshot.xcodeproj                 # then pick a simulator or your iPhone and press Run
+cd ios/EarshotKit && swift test            # the shared game logic's tests, on the Mac
+EARSHOT_NETWORK=1 swift test               # also decode a real Deezer preview
+xcodebuild test -project ios/Earshot.xcodeproj -scheme Earshot -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
+```
+
+The last one plays a whole round in the simulator against the real Deezer; it expects a fresh install (delete the
+app from the simulator first).
+
+To put it on your own iPhone, choose your Apple account under Signing & Capabilities in Xcode (a free account
+works; the app then needs re-installing every 7 days).

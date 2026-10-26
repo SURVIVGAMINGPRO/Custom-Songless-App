@@ -2,7 +2,7 @@
 
 A song guessing game built from the user's **own playlists** (shown as **Earshot**, `APP_NAME` in
 `src/lib/config.ts`). Desktop app for macOS and Windows (Tauri 2) around a SvelteKit 3 + Svelte 5 +
-TypeScript UI, which also runs as a web app. Public repo: never commit secrets, real names, emails or local paths.
+TypeScript UI, which also runs as a web app. A native SwiftUI iPhone/iPad app lives in `ios/` (see "iPhone app"). Public repo: never commit secrets, real names, emails or local paths.
 
 ## Hard rules
 
@@ -45,6 +45,7 @@ src/routes/         / library, /play/[id], /playlists/[id] (or new), /import (Ad
 src-tauri/          Tauri shell: plugins (http, opener, dialog), save_text_file command, icons, CSP
 scripts/make-icons.mjs  renders the app icon from assets/logo.svg (npm run icons)
 .github/workflows/build.yml  builds macOS + Windows; a v* tag publishes the release
+ios/                iPhone app: EarshotKit (shared Swift logic + tests), Earshot (SwiftUI), EarshotUITests
 ```
 
 ## SvelteKit 3 notes
@@ -92,9 +93,39 @@ the guess search is empty); a keyboard-focused button keeps its own Enter and Sp
 controls don't take focus on click, so typing and Enter carry on. Clashes are refused only between actions that
 can run at the same time (Guess and Next Song both use Enter). Tab and Escape can't be shortcuts.
 
+## iPhone app
+
+`ios/EarshotKit` is a Swift package with **EarshotCore**: a port of `src/lib/game`, `sources`, `audio` and the store
+(Models, Engine, Deck, Normalize, Translit, Search, Import, Deezer, Audio, LibraryStore, Display). Same JSON shape as
+the desktop library, so backups go both ways; the deck RNG and hash are bit-identical to `deck.ts` (parity tests hold
+values from running the TS). Port changes to the game rules to both sides. The Deezer client is an actor with the
+same allowlist, 45 requests / 5 s and cache TTLs; previews are decoded in memory (`decodeAudio`) and played with
+AVAudioEngine, never saved. Translit differences: Chinese uses Apple's `.mandarinToLatin` (no pinyin-pro), and
+Japanese titles with kanji are read with `CFStringTokenizer`. The library is one JSON file in Application Support.
+
+`ios/Earshot` holds the SwiftUI screens (iOS 18+, `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`): tabs for Playlists,
+Stats and Settings (a sidebar on iPad); the play screen pins a Liquid Glass bar above the keyboard with a small Play
+button, the guess search (songs from the game only) and Skip/Guess, with the desktop's Return rules. Colours are in
+`Theme.swift`; `Color.dynamic` must stay `nonisolated` because SwiftUI resolves colours off the main thread (a
+main-actor provider crashes). `Earshot.xcodeproj` is hand-written with synchronized folders, so new files need no
+project edits. The app icon comes from `npm run icons` (`scripts/make-icons.mjs` also writes the iOS set).
+`ios/EarshotUITests` plays a whole round against the real Deezer on a fresh install and keeps screenshots.
+
+```
+cd ios/EarshotKit && swift test       # 82 tests; EARSHOT_NETWORK=1 also decodes a real preview
+xcodebuild -project ios/Earshot.xcodeproj -scheme Earshot -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
+xcodebuild test ... (same destination)  # the UI test; uninstall the app from the simulator first
+```
+
+Verified in the iPhone 17 Pro simulator (iOS 26.5), light and dark: importing the Top Worldwide chart, How to Play,
+playing clips, the guess search, Return to pick then guess, the ignored extra Return, double Return to skip, a lost
+round with the full preview and artwork, Jump Back In, Stats and Settings. Not verified: a real iPhone, iPad layout,
+CSV import from Files, backups between the apps, mixes, Today's Song, Chinese/Japanese search on device.
+
 ## Versioning and releases
 
-Bump the version in `package.json`, `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json` together, add a
+Bump the version in `package.json`, `src-tauri/Cargo.toml`, `src-tauri/tauri.conf.json` and `MARKETING_VERSION` in
+`ios/Earshot.xcodeproj/project.pbxproj` together, add a
 user-facing entry at the top of `CHANGELOG.md`, then push a tag `vX.Y.Z`. The workflow publishes
 `Earshot-macOS.dmg`, `Earshot-Windows-setup.exe`, `Earshot-Windows.msi` and `Earshot-Windows-portable.exe`;
 the README links to `releases/latest/download/<name>`, so never rename them.
