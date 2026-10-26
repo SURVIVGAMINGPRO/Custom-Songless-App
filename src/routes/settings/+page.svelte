@@ -3,6 +3,7 @@
 	import Confirm from '#lib/components/Confirm.svelte';
 	import Icon from '#lib/components/Icon.svelte';
 	import PageHead from '#lib/components/PageHead.svelte';
+	import ShortcutSettings from '#lib/components/ShortcutSettings.svelte';
 	import Tabs from '#lib/components/Tabs.svelte';
 	import type { Appearance } from '#lib/game/types.ts';
 	import { saveTextFile } from '#lib/platform.ts';
@@ -91,6 +92,11 @@
 				</span>
 			</li>
 		</ul>
+	</section>
+
+	<section id="shortcuts">
+		<h2 class="group-title">Keyboard Shortcuts</h2>
+		<ShortcutSettings />
 	</section>
 
 	<section>

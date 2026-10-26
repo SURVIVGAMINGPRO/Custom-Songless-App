@@ -121,6 +121,8 @@ export interface Settings {
 	mode: Mode;
 	gameId?: string;
 	seenHelp: boolean;
+	/** Changed keyboard shortcuts by action (null = none); see src/lib/keys.ts. */
+	keys?: Record<string, string | null>;
 }
 
 export interface Library {

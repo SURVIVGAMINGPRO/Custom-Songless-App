@@ -130,10 +130,6 @@
 			background-color var(--t-fast);
 	}
 
-	.play :global(svg) {
-		margin-left: 2px;
-	}
-
 	.art:hover .shade,
 	.art:focus-visible .shade,
 	.art:hover .play,

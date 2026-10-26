@@ -38,6 +38,7 @@ src/lib/audio/      player.svelte.ts (Web Audio clips), silence.ts (skip leading
 src/lib/store/      db.ts (IndexedDB), library.svelte.ts (all state + actions, autosave)
 src/lib/components/ shared UI (Logo, Mosaic, PlaylistCard, Tabs, Dialog…); play/ holds the play screen pieces
 src/lib/platform.ts desktop detection, opening links, saving files
+src/lib/keys.ts     keyboard shortcuts: actions, defaults, matching, keycaps (changed ones live in settings.keys)
 src/routes/         / library, /play/[id], /playlists/[id] (or new), /import (Add a playlist),
                     /games/[id] (mix editor, or new), /stats, /settings, /api/* (web version only)
 src-tauri/          Tauri shell: plugins (http, opener, dialog), save_text_file command, icons, CSP
@@ -69,6 +70,15 @@ artwork growing while the preview plays. Reduced motion and reduced transparency
 The Mac app hides its title bar (`src-tauri/tauri.macos.conf.json`); `html.mac-app` sets `--titlebar` so the
 sidebar and toolbar leave room for the window buttons, and those strips are `data-tauri-drag-region`.
 Check 375 px wide and 1100 px, light and dark.
+
+## Keyboard shortcuts
+
+Actions and defaults are in `src/lib/keys.ts` (Enter guess or skip, Shift+Enter skip, Space play, Enter next song
+after a round, / search, S share, M mode, ? help); the play screen's `onkeydown` runs them and Settings records
+new ones (`ShortcutSettings.svelte`). Rules: letters, symbols and Space don't fire while typing (Space does while
+the guess search is empty); a keyboard-focused button keeps its own Enter and Space; Play, Skip and the segmented
+controls don't take focus on click, so typing and Enter carry on. Clashes are refused only between actions that
+can run at the same time (Guess and Next Song both use Enter). Tab and Escape can't be shortcuts.
 
 ## Versioning and releases
 

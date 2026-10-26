@@ -12,6 +12,7 @@
 	import Timeline from '#lib/components/play/Timeline.svelte';
 	import Tabs from '#lib/components/Tabs.svelte';
 	import { APP_NAME } from '#lib/config.ts';
+	import { type ActionId, actionFor, comboFromEvent, isMac, shortcutText, typesText } from '#lib/keys.ts';
 	import { dayNumber } from '#lib/game/deck.ts';
 	import { MAX_STEP, clipSeconds, formatSeconds, guess, shareText, skip, stepIndex } from '#lib/game/engine.ts';
 	import { searchSongs } from '#lib/game/search.ts';
@@ -31,6 +32,14 @@
 
 	let tab = $state(ALL);
 	let day = $state(dayNumber());
+	let guessBox = $state<ReturnType<typeof GuessBox>>();
+
+	const mac = isMac();
+	const keys = $derived(library.keys);
+	const keyText = (id: ActionId) => {
+		const combo = keys[id];
+		return combo ? shortcutText(combo, mac) : null;
+	};
 
 	const game = $derived(library.game(page.params.id ?? ''));
 	const mode = $derived(library.data.settings.mode);
@@ -145,11 +154,49 @@
 		}
 	}
 
+	/** Keyboard shortcuts (Settings → Keyboard Shortcuts). */
 	function onkeydown(e: KeyboardEvent) {
-		const el = e.target as HTMLElement;
-		if (e.key !== ' ' || el.closest('input, textarea, button, a, [role="tab"], dialog')) return;
+		if (e.defaultPrevented || e.isComposing || !game || !round) return;
+		if (document.querySelector('dialog[open]')) return;
+		const combo = comboFromEvent(e);
+		if (!combo) return;
+		const id = actionFor(keys, combo, playing ? 'playing' : 'finished');
+		if (!id) return;
+
+		const target = e.target as HTMLElement;
+		const field = target.closest<HTMLInputElement>('input, textarea, select, [contenteditable="true"]');
+		if (field) {
+			if (!field.matches('[data-guess-input]')) return;
+			// Letters and symbols type in the search; Space plays only while it's empty.
+			if (typesText(combo) && !(id === 'play' && combo === 'Space' && !field.value)) return;
+		} else if ((combo === 'Enter' || combo === 'Space') && target.closest('button, a, [role="tab"], summary')) {
+			// A button or link that has keyboard focus keeps its own Enter and Space.
+			return;
+		}
 		e.preventDefault();
-		togglePlay();
+		run(id);
+	}
+
+	function run(id: ActionId) {
+		switch (id) {
+			case 'guess':
+				return guessBox?.guessOrSkip();
+			case 'skip':
+				return guessBox?.skipNow();
+			case 'play':
+				return togglePlay();
+			case 'next':
+				if (mode === 'unlimited') nextSong();
+				return;
+			case 'search':
+				return guessBox?.focusSearch();
+			case 'share':
+				return void share();
+			case 'mode':
+				return library.setMode(mode === 'unlimited' ? 'daily' : 'unlimited');
+			case 'help':
+				ui.helpOpen = true;
+		}
 	}
 
 	function refreshDay() {
@@ -212,6 +259,7 @@
 							playing={player.playing}
 							loading={player.loading}
 							label={playing ? `Play ${formatSeconds(clip)}` : 'Play the preview'}
+							shortcut={keyText('play')}
 							onclick={togglePlay}
 						/>
 						{#if player.error}
@@ -224,12 +272,18 @@
 
 					{#if playing}
 						<GuessBox
+							bind:this={guessBox}
 							search={searchGuesses}
 							onguess={onGuess}
 							onskip={onSkip}
 							guessed={round.attempts.flatMap((a) => (a.kind === 'guess' ? [a.pick.id] : []))}
 						/>
-						<p class="hint">Guesses come from this {game.playlistIds.length > 1 ? 'mix' : 'playlist'}. Space plays the clip.</p>
+						<p class="hint">
+							Guesses come from this {game.playlistIds.length > 1 ? 'mix' : 'playlist'}.
+							{#if keyText('guess')}<kbd>{keyText('guess')}</kbd> guesses or skips.{/if}
+							{#if keyText('play')}<kbd>{keyText('play')}</kbd> plays the clip.{/if}
+							<a href="{resolve('/settings')}#shortcuts">Shortcuts</a>
+						</p>
 					{:else}
 						<RoundResult
 							song={answer}
@@ -346,6 +400,26 @@
 		color: var(--fg-3);
 		font-size: var(--fs-sm);
 		text-align: center;
+	}
+
+	.hint kbd {
+		padding: 1px 6px;
+		border-radius: 5px;
+		background: var(--fill-2);
+		color: var(--fg-2);
+		font-family: var(--font-body);
+		font-size: var(--fs-xs);
+		font-weight: 600;
+	}
+
+	.hint a {
+		color: var(--accent-text);
+		font-weight: 500;
+		text-decoration: none;
+	}
+
+	.hint a:hover {
+		text-decoration: underline;
 	}
 
 	.missing {

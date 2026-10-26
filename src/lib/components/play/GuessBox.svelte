@@ -63,6 +63,8 @@
 		reset();
 	}
 
+	// Enter (or whatever Guess is set to) is handled by the play screen's shortcuts,
+	// which call guessOrSkip() below. The list itself takes the arrow keys and Escape.
 	function onkeydown(e: KeyboardEvent) {
 		if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
 			if (!results.length) return;
@@ -71,21 +73,46 @@
 			const step = e.key === 'ArrowDown' ? 1 : -1;
 			active = (active + step + results.length) % results.length;
 			document.getElementById(`${uid}-opt-${active}`)?.scrollIntoView({ block: 'nearest' });
-		} else if (e.key === 'Enter') {
-			e.preventDefault();
-			if (open && active >= 0 && results[active]) pick(results[active]);
-			else if (picked) submit();
 		} else if (e.key === 'Escape' && open) {
 			e.preventDefault();
 			open = false;
 		}
 	}
 
+	let nudging = $state(false);
+
+	/** Guess the chosen (or highlighted) song; with nothing typed, skip. */
+	export function guessOrSkip(): void {
+		if (picked) return submit();
+		const highlighted = open && active >= 0 ? results[active] : undefined;
+		if (highlighted && !guessed.includes(highlighted.id)) {
+			picked = highlighted;
+			return submit();
+		}
+		if (!query.trim()) {
+			onskip();
+			return reset();
+		}
+		// Typed something that matches nothing: shake, don't guess.
+		nudging = false;
+		requestAnimationFrame(() => (nudging = true));
+	}
+
+	export function skipNow(): void {
+		onskip();
+		reset();
+	}
+
+	export function focusSearch(): void {
+		input.focus();
+		input.select();
+	}
+
 	const already = $derived(!!picked && guessed.includes(picked.id));
 </script>
 
 <div class="guess">
-	<div class="search">
+	<div class="search" class:nudging onanimationend={() => (nudging = false)}>
 		<span class="icon"><Icon name="search" size={17} /></span>
 		<input
 			bind:this={input}
@@ -96,6 +123,7 @@
 			onfocus={() => (open = query.trim().length > 0 && !picked)}
 			type="text"
 			role="combobox"
+			data-guess-input
 			placeholder="Search this playlist"
 			autocomplete="off"
 			spellcheck="false"
@@ -146,7 +174,15 @@
 			</ul>
 		{/if}
 	</div>
-	<button class="btn large action" class:quiet={!picked} type="button" disabled={already} onclick={submit}>
+	<!-- Clicking doesn't take focus from the search, so typing and shortcuts carry on. -->
+	<button
+		class="btn large action"
+		class:quiet={!picked}
+		type="button"
+		disabled={already}
+		onpointerdown={(e) => e.preventDefault()}
+		onclick={submit}
+	>
 		{#if picked}
 			{already ? 'Guessed' : 'Submit'}
 		{:else}
@@ -165,6 +201,22 @@
 		position: relative;
 		flex: 1;
 		min-width: 0;
+	}
+
+	.nudging {
+		animation: nudge 360ms var(--ease-out);
+	}
+
+	@keyframes nudge {
+		25% {
+			transform: translateX(-5px);
+		}
+		50% {
+			transform: translateX(4px);
+		}
+		75% {
+			transform: translateX(-2px);
+		}
 	}
 
 	.icon {

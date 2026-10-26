@@ -66,6 +66,7 @@
 			aria-selected={tab.key === value}
 			tabindex={tab.key === value ? 0 : -1}
 			title={tab.label}
+			onpointerdown={(e) => e.preventDefault()}
 			onclick={() => (value = tab.key)}
 		>
 			{tab.label}

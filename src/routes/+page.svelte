@@ -244,10 +244,6 @@
 		transition: transform var(--t-med) var(--ease-pop);
 	}
 
-	.jump-play :global(svg) {
-		margin-left: 2px;
-	}
-
 	.jump:hover .jump-play {
 		transform: scale(1.08);
 	}

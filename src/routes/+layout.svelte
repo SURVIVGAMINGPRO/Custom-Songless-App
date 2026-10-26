@@ -41,12 +41,16 @@
 		return () => clearTimeout(t);
 	});
 
-	// Pages cross-fade (see ::view-transition in app.css).
+	// Pages cross-fade (see ::view-transition in app.css). The fade waits for a
+	// drawn frame, so never hold the page change for it longer than a moment
+	// (a hidden or minimised window draws no frames).
 	onNavigate((nav) => {
 		sidebarOpen = false;
 		if (!document.startViewTransition || nav.from?.url.pathname === nav.to?.url.pathname) return;
 		return new Promise((done) => {
+			const fallback = setTimeout(done, 150);
 			document.startViewTransition(async () => {
+				clearTimeout(fallback);
 				done();
 				await nav.complete;
 			});

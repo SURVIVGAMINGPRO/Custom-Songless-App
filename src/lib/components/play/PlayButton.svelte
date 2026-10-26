@@ -5,11 +5,25 @@
 		playing,
 		loading,
 		label,
+		shortcut,
 		onclick
-	}: { playing: boolean; loading: boolean; label: string; onclick: () => void } = $props();
+	}: { playing: boolean; loading: boolean; label: string; shortcut?: string | null; onclick: () => void } = $props();
+
+	const name = $derived(playing ? 'Stop' : label);
 </script>
 
-<button type="button" class="play" class:playing aria-label={playing ? 'Stop' : label} aria-busy={loading} {onclick}>
+<!-- Clicking doesn't take focus, so Enter keeps guessing and skipping afterwards. -->
+<button
+	type="button"
+	class="play"
+	class:playing
+	aria-label={name}
+	aria-keyshortcuts={shortcut ?? undefined}
+	title={shortcut ? `${name} (${shortcut})` : name}
+	aria-busy={loading}
+	onpointerdown={(e) => e.preventDefault()}
+	{onclick}
+>
 	{#if loading}
 		<span class="spinner" aria-hidden="true">
 			{#each { length: 8 }, i (i)}<i style:--k={i}></i>{/each}
@@ -37,10 +51,6 @@
 			background-color var(--t-fast),
 			transform var(--t-med) var(--ease-pop),
 			box-shadow var(--t-med);
-	}
-
-	.play :global(svg) {
-		margin-left: 3px;
 	}
 
 	.play:hover {

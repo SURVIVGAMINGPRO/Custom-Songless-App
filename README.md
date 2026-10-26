@@ -38,6 +38,8 @@ Inspired by [Songless](https://lessgames.com/songless), but the songs are yours.
   **Today's song** is one song a day per playlist.
 - **Mixes** put several playlists in one game, each with its own tab.
 - **Stats** keep your streaks and how many tries each win took. Share a result as an emoji grid.
+- **Keyboard:** Enter guesses or skips, Shift-Enter skips, Space plays the clip, / jumps to the search.
+  Change any of them in Settings → Keyboard Shortcuts.
 
 It looks and feels like Apple's apps, in light or dark mode. Everything you make stays on your computer;
 Settings has a backup button.

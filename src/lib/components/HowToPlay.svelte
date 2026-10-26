@@ -79,10 +79,6 @@
 		color: var(--accent-ink);
 	}
 
-	.play :global(svg) {
-		margin-left: 1px;
-	}
-
 	.skip {
 		background: var(--fill);
 		color: var(--fg-2);

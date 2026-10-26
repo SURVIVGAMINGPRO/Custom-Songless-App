@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.1.1 (2026-10-26)
+
+- The play symbol sits in the middle of its button now.
+- Keyboard shortcuts, which you can change in Settings → Keyboard Shortcuts:
+  - **Enter** guesses the song you've picked (or the top suggestion), or skips when the search is empty. After a round, Enter goes to the next song.
+  - **Shift-Enter** skips even with something typed.
+  - **Space** plays or stops the clip (and still types once the search has text).
+  - **/** jumps to the search, **S** shares your result, **M** switches between Endless and Today's Song, **?** shows How to Play.
+- Clicking Play, Skip or a mode no longer takes the keyboard away from the search, so you can keep typing.
+
 ## 1.1.0 (2026-10-26)
 
 - A new look in the style of Apple's apps: a sidebar with your playlists and mixes, large titles, grouped lists, and the system font. On the Mac the sidebar runs up to the window buttons, like Music.

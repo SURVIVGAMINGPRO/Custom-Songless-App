@@ -1,6 +1,7 @@
 import { dailyPick, draw } from '../game/deck.ts';
 import { DEFAULT_STEPS, emptyStats, newRound, recordRound } from '../game/engine.ts';
 import type { Appearance, Game, GuessScope, Library, Mode, Playlist, Round, Song, Stats, Unmatched } from '../game/types.ts';
+import { type ActionId, type Bindings, withDefaults } from '../keys.ts';
 import { get, set } from './db.ts';
 
 const KEY = 'library';
@@ -324,6 +325,21 @@ class LibraryStore {
 
 	setAppearance(appearance: Appearance): void {
 		this.data.settings.appearance = appearance;
+		this.save();
+	}
+
+	/** Keyboard shortcuts: the player's changes over the defaults. */
+	get keys(): Bindings {
+		return withDefaults(this.data.settings.keys);
+	}
+
+	setKey(id: ActionId, combo: string | null): void {
+		this.data.settings.keys = { ...this.data.settings.keys, [id]: combo };
+		this.save();
+	}
+
+	resetKeys(): void {
+		delete this.data.settings.keys;
 		this.save();
 	}
 
