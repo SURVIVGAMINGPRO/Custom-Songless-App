@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.0 (2026-10-26)
+
+- A new look in the style of Apple's apps: a sidebar with your playlists and mixes, large titles, grouped lists, and the system font. On the Mac the sidebar runs up to the window buttons, like Music.
+- Light and dark mode, following your system. Settings → Appearance can pick one.
+- Guessing only shows songs from the playlist you're playing, as you type. No more covers, karaoke versions and other songs from all of Deezer.
+- Guess rows show an icon for each result (tick, artist, cross), so colour isn't the only signal.
+- Each playlist has its own page with its artwork, a song list, and Play, Rename and Delete.
+- When you finish a round, the cover grows while the preview plays, as in Apple Music.
+
 ## 1.0.0 (2026-10-25)
 
 The first release, as apps for macOS and Windows.

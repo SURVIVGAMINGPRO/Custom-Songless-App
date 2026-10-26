@@ -1,29 +1,40 @@
 <script lang="ts">
+	import Icon from '#lib/components/Icon.svelte';
 	import type { Attempt } from '#lib/game/types.ts';
 
 	let { attempts, rows, active }: { attempts: Attempt[]; rows: number; active: boolean } = $props();
 
-	const RESULT_LABEL = { correct: 'Correct', artist: 'Right artist', wrong: 'Wrong' } as const;
+	const RESULT = {
+		correct: { label: 'Correct', glyph: 'm7.5 12.5 3 3 6-6.5' },
+		artist: { label: 'Right artist', glyph: 'M12 12.2a2.4 2.4 0 1 0 0-4.8 2.4 2.4 0 0 0 0 4.8ZM7.6 17c.6-2 2.3-3 4.4-3s3.8 1 4.4 3' },
+		wrong: { label: 'Wrong', glyph: 'm8.8 8.8 6.4 6.4M15.2 8.8l-6.4 6.4' }
+	} as const;
 </script>
 
-<ol class="board" aria-label="Your guesses">
+<ol class="group board" aria-label="Your guesses">
 	{#each { length: rows }, i (i)}
 		{@const a = attempts[i]}
 		{#if !a}
 			<li class="row" class:current={active && i === attempts.length}>
-				<span class="n" aria-hidden="true">{i + 1}</span>
+				<span class="lead n" aria-hidden="true">{i + 1}</span>
+				<span class="text empty">{active && i === attempts.length ? 'Your guess' : ''}</span>
 				<span class="visually-hidden">{active && i === attempts.length ? 'Next guess' : 'Empty'}</span>
 			</li>
 		{:else if a.kind === 'skip'}
 			<li class="row filled skip">
-				<span class="n" aria-hidden="true">{i + 1}</span>
+				<span class="lead"><Icon name="forward" size={16} /></span>
 				<span class="text">Skipped</span>
 			</li>
 		{:else}
 			<li class="row filled {a.result}">
-				<span class="n" aria-hidden="true">{i + 1}</span>
-				<span class="text">{a.pick.title} <span class="by">· {a.pick.artist}</span></span>
-				<span class="visually-hidden">: {RESULT_LABEL[a.result]}</span>
+				<span class="lead">
+					<svg class="badge" viewBox="0 0 24 24" aria-hidden="true">
+						<circle cx="12" cy="12" r="10" />
+						<path d={RESULT[a.result].glyph} />
+					</svg>
+				</span>
+				<span class="text"><strong>{a.pick.title}</strong> <span class="by">{a.pick.artist}</span></span>
+				<span class="visually-hidden">: {RESULT[a.result].label}</span>
 			</li>
 		{/if}
 	{/each}
@@ -33,130 +44,154 @@
 	.board {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
-		gap: 8px;
-		margin: 0;
-		padding: 0;
-		list-style: none;
-		perspective: 700px;
 	}
 
 	.row {
 		position: relative;
 		display: flex;
 		align-items: center;
-		justify-content: center;
-		height: 46px;
-		padding: 0 44px;
-		border: 1px solid var(--line);
-		border-radius: var(--r-md);
-		background: rgb(255 255 255 / 0.015);
-		transition:
-			border-color var(--t-med),
-			box-shadow var(--t-med);
+		gap: 12px;
+		height: 44px;
+		padding: 0 14px;
+		transition: background-color var(--t-med);
+	}
+
+	/* Separators start after the leading icon, as in Apple's lists. */
+	.board > li + li {
+		box-shadow: none;
+	}
+
+	.board > li + li::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 46px;
+		right: 0;
+		height: 0.5px;
+		background: var(--line-strong);
+	}
+
+	.lead {
+		display: grid;
+		flex: none;
+		place-items: center;
+		width: 22px;
+		height: 22px;
+		color: var(--fg-3);
 	}
 
 	.n {
-		position: absolute;
-		left: 16px;
 		color: var(--fg-4);
-		font-family: var(--font-display);
+		font-family: var(--font-rounded);
 		font-size: var(--fs-sm);
-		font-weight: 700;
+		font-weight: 600;
 	}
 
-	.row.current {
-		border-color: rgb(255 224 66 / 0.55);
-		box-shadow: 0 0 0 3px var(--accent-wash);
-	}
-
-	.row.current .n {
-		color: var(--accent);
-	}
-
-	.filled {
-		border-color: transparent;
-		color: var(--row-ink);
-		animation: flip var(--t-slow) var(--ease-out) both;
-	}
-
-	.filled .n {
-		color: rgb(16 16 18 / 0.5);
+	.current .n {
+		width: 22px;
+		border-radius: var(--r-full);
+		background: var(--accent);
+		color: var(--accent-ink);
 	}
 
 	.text {
 		min-width: 0;
 		overflow: hidden;
-		font-family: var(--font-display);
-		font-size: 16px;
-		font-weight: 700;
+		font-size: var(--fs-md);
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
 
+	.text strong {
+		font-weight: 600;
+	}
+
 	.by {
-		font-weight: 500;
-		opacity: 0.75;
-	}
-
-	@media (min-width: 720px) {
-		.text {
-			font-size: 17px;
-		}
-	}
-
-	.skip {
-		background: var(--surface-2);
 		color: var(--fg-3);
 	}
 
-	.skip .n {
+	.empty {
 		color: var(--fg-4);
 	}
 
-	.wrong {
-		background: var(--bad);
-		animation:
-			flip var(--t-slow) var(--ease-out) both,
-			shake 360ms var(--ease-out) var(--t-slow);
+	.filled {
+		animation: fill-in var(--t-slow) var(--ease-out);
 	}
 
-	.artist {
-		background: var(--near);
+	.filled .lead {
+		animation: pop var(--t-slow) var(--ease-pop);
+	}
+
+	.skip .text {
+		color: var(--fg-3);
+	}
+
+	.badge {
+		width: 22px;
+		height: 22px;
+	}
+
+	.badge circle {
+		fill: currentColor;
+	}
+
+	.badge path {
+		fill: none;
+		stroke: var(--on-color);
+		stroke-width: 2;
+		stroke-linecap: round;
+		stroke-linejoin: round;
 	}
 
 	.correct {
-		background: var(--good);
+		background: var(--good-wash);
+	}
+
+	.correct .lead {
+		color: var(--good);
+	}
+
+	.artist {
+		background: var(--near-wash);
+	}
+
+	.artist .lead {
+		color: var(--near);
+	}
+
+	.wrong {
+		background: var(--bad-wash);
 		animation:
-			flip var(--t-slow) var(--ease-out) both,
-			pop 420ms var(--ease-pop) var(--t-slow);
+			fill-in var(--t-slow) var(--ease-out),
+			nudge 320ms var(--ease-out) 120ms;
 	}
 
-	@keyframes flip {
+	.wrong .lead {
+		color: var(--bad);
+	}
+
+	@keyframes fill-in {
 		from {
-			transform: rotateX(-90deg);
-			opacity: 0.4;
-		}
-	}
-
-	@keyframes shake {
-		20% {
-			transform: translateX(-6px);
-		}
-		40% {
-			transform: translateX(5px);
-		}
-		60% {
-			transform: translateX(-3px);
-		}
-		80% {
-			transform: translateX(2px);
+			background-color: transparent;
 		}
 	}
 
 	@keyframes pop {
-		40% {
-			transform: scale(1.03);
-			box-shadow: 0 0 0 6px rgb(61 220 151 / 0.25);
+		from {
+			transform: scale(0.4);
+			opacity: 0;
+		}
+	}
+
+	@keyframes nudge {
+		25% {
+			transform: translateX(-4px);
+		}
+		50% {
+			transform: translateX(3px);
+		}
+		75% {
+			transform: translateX(-1.5px);
 		}
 	}
 </style>

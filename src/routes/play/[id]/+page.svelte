@@ -6,7 +6,7 @@
 	import Icon from '#lib/components/Icon.svelte';
 	import Mosaic from '#lib/components/Mosaic.svelte';
 	import GuessBoard from '#lib/components/play/GuessBoard.svelte';
-	import GuessBox from '#lib/components/play/GuessBox.svelte';
+	import GuessBox, { type GuessOption } from '#lib/components/play/GuessBox.svelte';
 	import PlayButton from '#lib/components/play/PlayButton.svelte';
 	import RoundResult from '#lib/components/play/RoundResult.svelte';
 	import Timeline from '#lib/components/play/Timeline.svelte';
@@ -14,17 +14,16 @@
 	import { APP_NAME } from '#lib/config.ts';
 	import { dayNumber } from '#lib/game/deck.ts';
 	import { MAX_STEP, clipSeconds, formatSeconds, guess, shareText, skip, stepIndex } from '#lib/game/engine.ts';
-	import { fold, normalizeArtist, normalizeTitle } from '#lib/game/normalize.ts';
+	import { searchSongs } from '#lib/game/search.ts';
 	import type { GuessPick, Mode, Song } from '#lib/game/types.ts';
-	import { search as deezerSearch } from '#lib/sources/deezer.ts';
 	import { ALL, library } from '#lib/store/library.svelte.ts';
 	import { toasts } from '#lib/toast.svelte.ts';
 	import { ui } from '#lib/ui.svelte.ts';
-	import { plural } from '#lib/util.ts';
+	import { coverUrl, plural } from '#lib/util.ts';
 
 	const MODES: { key: Mode; label: string }[] = [
 		{ key: 'unlimited', label: 'Endless' },
-		{ key: 'daily', label: "Today's song" }
+		{ key: 'daily', label: "Today's Song" }
 	];
 
 	/** Songs whose preview failed this session; left out of new rounds. */
@@ -37,7 +36,8 @@
 	const mode = $derived(library.data.settings.mode);
 	const tabs = $derived(game ? library.tabs(game) : []);
 	const pool = $derived(game ? library.pool(game, tab) : []);
-	const total = $derived(game ? library.pool(game, ALL).length : 0);
+	/** Every song in the game: guesses can only be one of these. */
+	const gameSongs = $derived(game ? library.pool(game, ALL).map((id) => library.song(id)).filter((s): s is Song => !!s) : []);
 	const art = $derived(game ? library.songsOf(game.playlistIds, 8) : []);
 	const editHref = $derived(
 		game
@@ -121,26 +121,16 @@
 		library.startRound(game, tab, mode, day, [...broken]);
 	}
 
-	async function searchGuesses(q: string, signal: AbortSignal): Promise<GuessPick[]> {
-		let songs: Song[];
-		if (game?.guessScope === 'game') {
-			const f = fold(q);
-			songs = library
-				.pool(game, ALL)
-				.map((id) => library.song(id)!)
-				.filter((s) => fold(`${s.title} ${s.artists.join(' ')}`).includes(f))
-				.slice(0, 10);
-		} else {
-			songs = await deezerSearch(q, 20, signal);
-		}
-		const seen = new Set<string>();
-		return songs
-			.filter((s) => {
-				const key = `${normalizeTitle(s.title)}|${normalizeArtist(s.artist)}`;
-				return !seen.has(key) && !!seen.add(key);
-			})
-			.slice(0, 10)
-			.map((s) => ({ id: s.id, title: s.title, artist: s.artist, artists: s.artists, isrc: s.isrc }));
+	/** Guesses come only from the songs in this playlist (or mix). */
+	function searchGuesses(q: string): GuessOption[] {
+		return searchSongs(gameSongs, q, 8).map((s) => ({
+			id: s.id,
+			title: s.title,
+			artist: s.artist,
+			artists: s.artists,
+			isrc: s.isrc,
+			cover: coverUrl(s)
+		}));
 	}
 
 	async function share() {
@@ -176,70 +166,61 @@
 <div class="stage">
 	{#if !game}
 		<section class="missing">
-			<h1>This game is gone</h1>
+			<h1>This Game Is Gone</h1>
 			<p class="muted">Its playlist may have been deleted.</p>
-			<a class="btn" href={resolve('/')}>Back to your playlists</a>
+			<a class="btn" href={resolve('/')}>Back to Playlists</a>
 		</section>
 	{:else}
-		<div class="top">
-			<a class="back" href={resolve('/')}><Icon name="arrow-left" size={18} /> Playlists</a>
-			<button class="icon-btn" type="button" aria-label="How to play" onclick={() => (ui.helpOpen = true)}>
+		<header class="hero">
+			<div class="hero-art"><Mosaic songs={art} seed={game.id} radius="var(--r-sm)" /></div>
+			<div class="hero-text">
+				<p class="eyebrow">{game.playlistIds.length > 1 ? 'Mix' : 'Playlist'}</p>
+				<h1 title={game.name}>{game.name}</h1>
+				<p class="meta">{plural(gameSongs.length, 'song')} · <a href={editHref}>Edit</a></p>
+			</div>
+			<button class="icon-btn help" type="button" aria-label="How to play" onclick={() => (ui.helpOpen = true)}>
 				<Icon name="help" size={20} />
 			</button>
-		</div>
-
-		<header class="hero">
-			<div class="hero-art"><Mosaic songs={art} seed={game.id} radius="var(--r-md)" /></div>
-			<div class="hero-text">
-				<p class="eyebrow">{game.playlistIds.length > 1 ? 'Mix' : 'Your playlist'}</p>
-				<h1 title={game.name}>{game.name}</h1>
-				<p class="muted meta">
-					{plural(total, 'song')} · <a href={editHref}>Edit</a>
-				</p>
-			</div>
 		</header>
 
-		<div class="modes">
+		<div class="controls">
 			<Tabs size="small" label="Mode" tabs={MODES} bind:value={() => mode, (v) => library.setMode(v as Mode)} />
-			<p class="mode-note">
-				{mode === 'daily' ? 'One song a day from this playlist' : 'A new song every round, no repeats'}
-			</p>
+			{#if tabs.length > 1}
+				<Tabs size="small" label="Playlist" {tabs} bind:value={tab} />
+			{/if}
 		</div>
-
-		{#if tabs.length > 1}
-			<div class="lists"><Tabs label="Playlist" {tabs} bind:value={tab} /></div>
-		{/if}
 
 		{#if pool.length === 0}
 			<section class="missing">
 				<p>No songs to play yet.</p>
-				<a class="btn quiet" href={editHref}>Add songs</a>
+				<a class="btn quiet" href={editHref}>Add Songs</a>
 			</section>
 		{:else if round && answer}
 			{#key `${round.songId}:${tab}:${mode}`}
 				<div class="round">
 					<GuessBoard attempts={round.attempts} rows={steps.length} active={playing} />
 
-					<Timeline
-						steps={timelineSteps}
-						{unlocked}
-						position={player.position}
-						label={playing ? formatSeconds(clip) : 'Full preview'}
-					/>
-
-					<PlayButton
-						playing={player.playing}
-						loading={player.loading}
-						label={playing ? `Play ${formatSeconds(clip)}` : 'Play the preview'}
-						onclick={togglePlay}
-					/>
-
-					{#if player.error}
-						<p class="error" role="alert">
-							{player.error}
-							<button class="link" type="button" onclick={skipBroken}>Skip this song</button>
-						</p>
-					{/if}
+					<section class="player" aria-label="Player">
+						<Timeline
+							steps={timelineSteps}
+							{unlocked}
+							position={player.position}
+							label={playing ? formatSeconds(clip) : 'Full preview'}
+							detail={playing ? `Try ${round.attempts.length + 1} of ${steps.length}` : `${round.attempts.length} of ${steps.length} tries used`}
+						/>
+						<PlayButton
+							playing={player.playing}
+							loading={player.loading}
+							label={playing ? `Play ${formatSeconds(clip)}` : 'Play the preview'}
+							onclick={togglePlay}
+						/>
+						{#if player.error}
+							<p class="error" role="alert">
+								{player.error}
+								<button class="link" type="button" onclick={skipBroken}>Skip This Song</button>
+							</p>
+						{/if}
+					</section>
 
 					{#if playing}
 						<GuessBox
@@ -248,13 +229,13 @@
 							onskip={onSkip}
 							guessed={round.attempts.flatMap((a) => (a.kind === 'guess' ? [a.pick.id] : []))}
 						/>
-						<p class="hint">Space plays the clip</p>
+						<p class="hint">Guesses come from this {game.playlistIds.length > 1 ? 'mix' : 'playlist'}. Space plays the clip.</p>
 					{:else}
 						<RoundResult
 							song={answer}
 							{round}
 							{steps}
-							spinning={player.playing}
+							playing={player.playing}
 							onshare={share}
 							onnext={mode === 'unlimited' ? nextSong : undefined}
 						/>
@@ -271,102 +252,77 @@
 		margin: 0 auto;
 	}
 
-	.top {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		margin-bottom: 12px;
-	}
-
-	.back {
-		display: inline-flex;
-		align-items: center;
-		gap: 6px;
-		margin-left: -8px;
-		padding: 6px 10px;
-		border-radius: var(--r-full);
-		color: var(--fg-3);
-		font-size: var(--fs-sm);
-		font-weight: 500;
-		text-decoration: none;
-		transition:
-			color var(--t-fast),
-			background-color var(--t-fast);
-	}
-
-	.back:hover {
-		background: var(--surface-2);
-		color: var(--fg);
-	}
-
 	.hero {
 		display: flex;
 		align-items: center;
-		gap: 18px;
+		gap: 16px;
 		min-width: 0;
+		margin: 12px 0 20px;
 		animation: rise var(--t-slow) var(--ease-out) both;
 	}
 
 	.hero-art {
-		width: 84px;
+		width: 76px;
 		flex: none;
-		border-radius: var(--r-md);
-		box-shadow: var(--shadow-card);
+		border-radius: var(--r-sm);
+		box-shadow: var(--shadow-art);
 	}
 
 	.hero-text {
+		flex: 1;
 		min-width: 0;
 	}
 
 	.hero h1 {
 		overflow: hidden;
-		font-size: clamp(26px, 5vw, var(--fs-2xl));
+		font-size: var(--fs-hero);
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
 
 	.meta {
-		margin-top: 4px;
+		color: var(--fg-3);
 		font-size: var(--fs-sm);
 	}
 
 	.meta a {
-		color: var(--fg-2);
-		text-underline-offset: 3px;
+		color: var(--accent-text);
+		font-weight: 500;
+		text-decoration: none;
 	}
 
-	.modes {
+	.meta a:hover {
+		text-decoration: underline;
+	}
+
+	.help {
+		align-self: flex-start;
+	}
+
+	.controls {
 		display: flex;
 		flex-wrap: wrap;
-		align-items: center;
-		gap: 8px 14px;
-		margin: 24px 0 16px;
-	}
-
-	.modes :global(.tabs) {
-		margin: 0;
-	}
-
-	.mode-note {
-		color: var(--fg-4);
-		font-size: var(--fs-sm);
-	}
-
-	.lists {
-		margin-bottom: 16px;
-	}
-
-	.lists :global(.tabs) {
-		margin: 0;
+		gap: 10px;
+		margin-bottom: 20px;
 	}
 
 	.round {
+		display: grid;
+		gap: 20px;
 		animation: rise var(--t-slow) var(--ease-out) both;
 	}
 
+	.player {
+		display: grid;
+		gap: 22px;
+		padding: 18px 20px 22px;
+		border-radius: var(--r-xl);
+		background: var(--surface);
+	}
+
 	.error {
-		margin-top: 12px;
-		color: var(--bad-soft);
+		margin-top: -8px;
+		color: var(--bad);
 		font-size: var(--fs-sm);
 		text-align: center;
 	}
@@ -376,27 +332,20 @@
 		padding: 0;
 		border: 0;
 		background: none;
-		color: var(--fg-2);
+		color: var(--accent-text);
 		font-size: var(--fs-sm);
-		text-decoration: underline;
-		text-underline-offset: 3px;
+		font-weight: 600;
 	}
 
 	.link:hover {
-		color: var(--fg);
+		text-decoration: underline;
 	}
 
 	.hint {
-		margin-top: 12px;
-		color: var(--fg-4);
-		font-size: var(--fs-xs);
+		margin-top: -10px;
+		color: var(--fg-3);
+		font-size: var(--fs-sm);
 		text-align: center;
-	}
-
-	@media (hover: none) {
-		.hint {
-			display: none;
-		}
 	}
 
 	.missing {

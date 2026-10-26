@@ -1,35 +1,38 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import Icon, { type IconName } from '#lib/components/Icon.svelte';
+	import Logo from '#lib/components/Logo.svelte';
+	import Mosaic from '#lib/components/Mosaic.svelte';
+	import PageHead from '#lib/components/PageHead.svelte';
 	import PlaylistCard from '#lib/components/PlaylistCard.svelte';
-	import { APP_NAME, SAMPLE_PLAYLIST } from '#lib/config.ts';
+	import { SAMPLE_PLAYLIST } from '#lib/config.ts';
 	import { playGame, playPlaylist } from '#lib/nav.ts';
 	import { playlist as deezerPlaylist } from '#lib/sources/deezer.ts';
-	import { library } from '#lib/store/library.svelte.ts';
+	import { ALL, library } from '#lib/store/library.svelte.ts';
 	import { toasts } from '#lib/toast.svelte.ts';
 	import { plural } from '#lib/util.ts';
 
-	const SOURCE = { spotify: 'from Spotify', deezer: 'from Deezer', built: 'made here' } as const;
+	const SOURCE = { spotify: 'From Spotify', deezer: 'From Deezer', built: 'Made here' } as const;
 
 	const playlists = $derived(library.data.playlists);
 	const mixes = $derived(library.mixes);
 	const last = $derived.by(() => {
 		const g = library.currentGame;
-		return g && library.pool(g, 'all').length > 0 ? g : undefined;
+		return g && library.pool(g, ALL).length > 0 ? g : undefined;
 	});
 
 	const ways: { icon: IconName; title: string; text: string; href: string }[] = [
 		{
 			icon: 'file',
 			title: 'From Spotify',
-			text: 'Export your playlist as a file with Exportify, then drop it in.',
+			text: 'Export it as a file with Exportify, then drop it in.',
 			href: resolve('/import')
 		},
 		{ icon: 'link', title: 'From Deezer', text: 'Paste a playlist or album link.', href: resolve('/import') },
 		{
 			icon: 'plus',
-			title: 'Make one here',
-			text: 'Search for songs and build your own list.',
+			title: 'Make One Here',
+			text: 'Search for songs and add them.',
 			href: resolve('/playlists/[id]', { id: 'new' })
 		}
 	];
@@ -54,48 +57,51 @@
 	}
 </script>
 
-<svelte:head>
-	<title>{APP_NAME}</title>
-</svelte:head>
-
-<section class="hero">
-	<p class="eyebrow">Your playlists, by ear</p>
-	<h1>Name the song<br />in a split second.</h1>
-	<p class="lede">
-		Every playlist you add becomes its own guessing game. Hear a tenth of a second, guess, and get a longer clip
-		after every miss.
-	</p>
-	{#if last}
-		<button class="continue" type="button" onclick={() => playGame(last)}>
-			<span class="pulse" aria-hidden="true"></span>
-			Continue <strong>{last.name}</strong>
-			<Icon name="arrow-right" size={18} />
-		</button>
-	{/if}
-</section>
-
 {#if playlists.length === 0}
-	<section class="start">
-		<h2>Add your first playlist</h2>
-		<div class="ways">
-			{#each ways as w, i (w.title)}
-				<a class="way rise" style:--i={i} href={w.href}>
-					<span class="way-icon"><Icon name={w.icon} size={22} /></span>
-					<span class="way-title">{w.title}</span>
-					<span class="way-text">{w.text}</span>
-				</a>
+	<PageHead title="Playlists" />
+	<section class="empty">
+		<div class="empty-art"><Logo size={56} /></div>
+		<h2>No Playlists Yet</h2>
+		<p class="muted">Every playlist you add becomes its own song guessing game.</p>
+		<ul class="group ways">
+			{#each ways as w (w.title)}
+				<li>
+					<a class="way" href={w.href}>
+						<span class="way-icon"><Icon name={w.icon} size={18} /></span>
+						<span class="way-text">
+							<span class="way-title">{w.title}</span>
+							<span class="muted">{w.text}</span>
+						</span>
+						<Icon name="chevron-right" size={16} />
+					</a>
+				</li>
 			{/each}
-		</div>
-		<button class="sample" type="button" disabled={loadingSample} onclick={trySample}>
+		</ul>
+		<button class="btn quiet" type="button" disabled={loadingSample} onclick={trySample}>
 			<Icon name="sparkle" size={16} />
-			{loadingSample ? 'Loading the chart…' : `No playlist handy? Try Deezer's ${SAMPLE_PLAYLIST.name} chart`}
+			{loadingSample ? 'Loading…' : `Try Deezer's ${SAMPLE_PLAYLIST.name}`}
 		</button>
 	</section>
 {:else}
+	<PageHead title="Playlists" sub="Press a playlist to play it.">
+		{#snippet actions()}
+			<a class="btn" href={resolve('/import')}><Icon name="plus" size={16} weight={2.2} /> Add Playlist</a>
+		{/snippet}
+	</PageHead>
+
+	{#if last}
+		<button class="jump rise" type="button" onclick={() => playGame(last)}>
+			<span class="jump-art"><Mosaic songs={library.songsOf(last.playlistIds, 4)} seed={last.id} radius="var(--r-sm)" /></span>
+			<span class="jump-text">
+				<span class="eyebrow">Jump Back In</span>
+				<span class="jump-name">{last.name}</span>
+			</span>
+			<span class="jump-play" aria-hidden="true"><Icon name="play" size={16} /></span>
+		</button>
+	{/if}
+
 	<section>
-		<div class="section-head">
-			<h2>Playlists <span class="count">{playlists.length}</span></h2>
-		</div>
+		<h2 class="section-title">All Playlists</h2>
 		<div class="grid">
 			{#each playlists as p, i (p.id)}
 				<PlaylistCard
@@ -104,293 +110,214 @@
 					tag={p.unmatched.length ? `${p.unmatched.length} to check` : undefined}
 					songs={library.songsOf([p.id], 8)}
 					seed={p.id}
-					editHref={resolve('/playlists/[id]', { id: p.id })}
+					href={resolve('/playlists/[id]', { id: p.id })}
 					index={i}
 					onplay={() => (p.songIds.length ? playPlaylist(p) : toasts.show('Add some songs to this playlist first'))}
 				/>
 			{/each}
-			<a class="add-card rise" style:--i={playlists.length} href={resolve('/import')}>
-				<span class="add-icon"><Icon name="plus" size={28} /></span>
-				Add a playlist
-			</a>
 		</div>
 	</section>
 
 	{#if playlists.length > 1}
 		<section>
 			<div class="section-head">
-				<h2>Mixes <span class="count">{mixes.length}</span></h2>
-				<p class="muted">Several playlists in one game, each with its own tab.</p>
-			</div>
-			<div class="grid">
-				{#each mixes as g, i (g.id)}
-					<PlaylistCard
-						title={g.name}
-						meta="{g.playlistIds.length} playlists · {plural(library.pool(g, 'all').length, 'song')}"
-						songs={library.songsOf(g.playlistIds, 8)}
-						seed={g.id}
-						editHref={resolve('/games/[id]', { id: g.id })}
-						stacked
-						index={i}
-						onplay={() => playGame(g)}
-					/>
-				{/each}
-				<a class="add-card small rise" style:--i={mixes.length} href={resolve('/games/[id]', { id: 'new' })}>
-					<span class="add-icon"><Icon name="layers" size={26} /></span>
-					New mix
+				<h2 class="section-title">Mixes</h2>
+				<a class="btn small quiet" href={resolve('/games/[id]', { id: 'new' })}>
+					<Icon name="plus" size={14} weight={2.2} /> New Mix
 				</a>
 			</div>
+			{#if mixes.length === 0}
+				<p class="muted note">Put several playlists in one game, each with its own tab.</p>
+			{:else}
+				<div class="grid">
+					{#each mixes as g, i (g.id)}
+						<PlaylistCard
+							title={g.name}
+							meta="{g.playlistIds.length} playlists · {plural(library.pool(g, ALL).length, 'song')}"
+							songs={library.songsOf(g.playlistIds, 8)}
+							seed={g.id}
+							href={resolve('/games/[id]', { id: g.id })}
+							stacked
+							index={i}
+							onplay={() => playGame(g)}
+						/>
+					{/each}
+				</div>
+			{/if}
 		</section>
 	{/if}
 {/if}
 
 <style>
-	.hero {
-		max-width: 680px;
-		margin: 32px 0 48px;
+	section + section {
+		margin-top: 40px;
 	}
 
-	@media (min-width: 720px) {
-		.hero {
-			margin: 48px 0 64px;
+	.section-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		margin-bottom: 14px;
+	}
+
+	.section-title {
+		margin-bottom: 14px;
+		font-size: var(--fs-xl);
+	}
+
+	.section-head .section-title {
+		margin-bottom: 0;
+	}
+
+	.note {
+		font-size: var(--fs-sm);
+	}
+
+	.grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+		gap: 28px 20px;
+	}
+
+	@media (min-width: 900px) {
+		.grid {
+			grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
 		}
 	}
 
-	.hero h1 {
-		margin-top: 12px;
-		font-size: var(--fs-hero);
-		font-weight: 800;
-		font-variation-settings: 'wdth' 80;
-		letter-spacing: -0.035em;
-		line-height: 0.98;
-		animation: rise var(--t-slow) var(--ease-out) both;
-	}
-
-	.lede {
-		max-width: 52ch;
-		margin-top: 18px;
-		color: var(--fg-2);
-		font-size: 17px;
-		animation: rise var(--t-slow) var(--ease-out) 80ms both;
-	}
-
-	.continue {
-		display: inline-flex;
+	/* Jump Back In: a wide row, like Apple Music's Up Next card */
+	.jump {
+		display: flex;
 		align-items: center;
-		gap: 10px;
-		margin-top: 28px;
-		padding: 12px 18px 12px 16px;
-		border: 1px solid var(--line-strong);
-		border-radius: var(--r-full);
+		gap: 14px;
+		width: min(440px, 100%);
+		margin-bottom: 36px;
+		padding: 10px 14px 10px 10px;
+		border: 0;
+		border-radius: var(--r-lg);
 		background: var(--surface);
-		color: var(--fg-2);
-		font-size: var(--fs-md);
-		animation: rise var(--t-slow) var(--ease-out) 160ms both;
+		text-align: left;
 		transition:
-			border-color var(--t-fast),
+			background-color var(--t-fast),
 			transform var(--t-fast) var(--ease-out);
 	}
 
-	.continue strong {
-		max-width: 22ch;
+	.jump:hover {
+		background: var(--surface-2);
+	}
+
+	.jump:active {
+		transform: scale(0.99);
+	}
+
+	.jump-art {
+		width: 52px;
+		flex: none;
+		border-radius: var(--r-sm);
+		box-shadow: var(--shadow-card);
+	}
+
+	.jump-text {
+		display: grid;
+		flex: 1;
+		min-width: 0;
+	}
+
+	.jump-name {
 		overflow: hidden;
-		color: var(--fg);
+		font-size: var(--fs-lg);
 		font-weight: 600;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
 
-	.continue:hover {
-		border-color: var(--accent);
-	}
-
-	.continue:hover :global(svg) {
-		transform: translateX(3px);
-	}
-
-	.continue :global(svg) {
-		color: var(--accent);
-		transition: transform var(--t-fast) var(--ease-out);
-	}
-
-	.pulse {
-		position: relative;
-		width: 8px;
-		height: 8px;
-		border-radius: var(--r-full);
-		background: var(--accent);
-	}
-
-	.pulse::after {
-		content: '';
-		position: absolute;
-		inset: 0;
-		border-radius: inherit;
-		background: var(--accent);
-		animation: ping 1.8s var(--ease-out) infinite;
-	}
-
-	@keyframes ping {
-		to {
-			transform: scale(3);
-			opacity: 0;
-		}
-	}
-
-	section + section {
-		margin-top: 56px;
-	}
-
-	.section-head {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: baseline;
-		gap: 4px 14px;
-		margin-bottom: 20px;
-	}
-
-	.section-head h2 {
-		font-size: var(--fs-xl);
-	}
-
-	.section-head .muted {
-		font-size: var(--fs-sm);
-	}
-
-	.count {
-		margin-left: 2px;
-		color: var(--fg-4);
-		font-weight: 500;
-	}
-
-	.grid {
+	.jump-play {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-		gap: 28px 20px;
-	}
-
-	@media (min-width: 720px) {
-		.grid {
-			grid-template-columns: repeat(auto-fill, minmax(196px, 1fr));
-		}
-	}
-
-	.add-card {
-		display: grid;
-		align-content: center;
-		justify-items: center;
-		gap: 12px;
-		aspect-ratio: 1;
-		border: 1.5px dashed var(--line-strong);
-		border-radius: var(--r-lg);
-		color: var(--fg-3);
-		font-weight: 600;
-		text-decoration: none;
-		transition:
-			border-color var(--t-med),
-			color var(--t-med),
-			background-color var(--t-med);
-	}
-
-	.add-icon {
-		display: grid;
+		flex: none;
 		place-items: center;
-		width: 56px;
-		height: 56px;
+		width: 34px;
+		height: 34px;
 		border-radius: var(--r-full);
-		background: var(--surface-2);
-		transition:
-			background-color var(--t-med),
-			color var(--t-med),
-			transform var(--t-med) var(--ease-pop);
-	}
-
-	.add-card:hover {
-		border-color: var(--accent);
-		background: var(--accent-wash);
-		color: var(--fg);
-	}
-
-	.add-card:hover .add-icon {
 		background: var(--accent);
 		color: var(--accent-ink);
-		transform: rotate(90deg);
+		transition: transform var(--t-med) var(--ease-pop);
 	}
 
-	.add-card.small:hover .add-icon {
+	.jump-play :global(svg) {
+		margin-left: 2px;
+	}
+
+	.jump:hover .jump-play {
 		transform: scale(1.08);
 	}
 
-	.start h2 {
-		margin-bottom: 20px;
+	/* Empty library */
+	.empty {
+		display: grid;
+		justify-items: center;
+		gap: 10px;
+		max-width: 460px;
+		margin: 24px auto 0;
+		text-align: center;
+	}
+
+	.empty-art {
+		display: grid;
+		place-items: center;
+		width: 96px;
+		height: 96px;
+		margin-bottom: 6px;
+		border-radius: 22px;
+		background: var(--surface);
+		box-shadow: var(--shadow-card);
+	}
+
+	.empty h2 {
 		font-size: var(--fs-xl);
 	}
 
 	.ways {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-		gap: 14px;
+		width: 100%;
+		margin: 16px 0 8px;
+		text-align: left;
 	}
 
 	.way {
-		display: grid;
-		gap: 6px;
-		padding: 22px;
-		border: 1px solid var(--line);
-		border-radius: var(--r-lg);
-		background: var(--surface);
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		padding: 12px 14px;
+		color: var(--fg-3);
 		text-decoration: none;
-		transition:
-			border-color var(--t-med),
-			transform var(--t-med) var(--ease-out),
-			box-shadow var(--t-med);
+		transition: background-color var(--t-fast);
 	}
 
 	.way:hover {
-		border-color: var(--accent);
-		box-shadow: 0 16px 40px rgb(0 0 0 / 0.4);
-		transform: translateY(-3px);
+		background: var(--fill-3);
 	}
 
 	.way-icon {
 		display: grid;
+		flex: none;
 		place-items: center;
-		width: 44px;
-		height: 44px;
-		margin-bottom: 8px;
-		border-radius: var(--r-md);
-		background: var(--accent-wash);
-		color: var(--accent);
-	}
-
-	.way-title {
-		font-family: var(--font-display);
-		font-size: var(--fs-lg);
-		font-weight: 700;
+		width: 30px;
+		height: 30px;
+		border-radius: 7px;
+		background: var(--accent);
+		color: var(--accent-ink);
 	}
 
 	.way-text {
-		color: var(--fg-3);
+		display: grid;
+		flex: 1;
+		min-width: 0;
 		font-size: var(--fs-sm);
 	}
 
-	.sample {
-		display: inline-flex;
-		align-items: center;
-		gap: 8px;
-		margin-top: 20px;
-		padding: 8px 4px;
-		border: 0;
-		background: none;
-		color: var(--fg-3);
-		font-size: var(--fs-sm);
-	}
-
-	.sample:hover:not(:disabled) {
+	.way-title {
 		color: var(--fg);
-	}
-
-	.sample :global(svg) {
-		color: var(--accent);
+		font-size: var(--fs-md);
+		font-weight: 600;
 	}
 </style>

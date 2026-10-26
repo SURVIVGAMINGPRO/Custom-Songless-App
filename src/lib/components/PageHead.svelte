@@ -2,6 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import { APP_NAME } from '#lib/config.ts';
 
+	/** A large title, as at the top of Apple's apps. */
 	let { title, sub, actions }: { title: string; sub?: string; actions?: Snippet } = $props();
 </script>
 
@@ -9,15 +10,15 @@
 	<title>{title} · {APP_NAME}</title>
 </svelte:head>
 
-<div class="head">
+<header class="head">
 	<div class="titles">
 		<h1>{title}</h1>
-		{#if sub}<p class="muted">{sub}</p>{/if}
+		{#if sub}<p class="sub">{sub}</p>{/if}
 	</div>
 	{#if actions}
 		<div class="actions">{@render actions()}</div>
 	{/if}
-</div>
+</header>
 
 <style>
 	.head {
@@ -25,8 +26,8 @@
 		flex-wrap: wrap;
 		align-items: flex-end;
 		justify-content: space-between;
-		gap: 16px;
-		margin: 32px 0 24px;
+		gap: 12px 16px;
+		margin: 12px 0 24px;
 	}
 
 	.titles {
@@ -34,14 +35,15 @@
 	}
 
 	h1 {
-		font-size: 32px;
-		letter-spacing: -0.01em;
+		font-size: var(--fs-hero);
+		letter-spacing: -0.025em;
 		overflow-wrap: anywhere;
 	}
 
-	.muted {
+	.sub {
 		margin-top: 4px;
-		font-size: 14px;
+		color: var(--fg-3);
+		font-size: var(--fs-md);
 	}
 
 	.actions {

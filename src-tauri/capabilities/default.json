@@ -2,18 +2,30 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "What the Earshot window may do",
-  "windows": ["main"],
+  "windows": [
+    "main"
+  ],
   "permissions": [
     "core:default",
+    "core:window:allow-internal-toggle-maximize",
+    "core:window:allow-start-dragging",
     "dialog:allow-save",
     "opener:default",
     {
       "identifier": "http:default",
       "allow": [
-        { "url": "https://api.deezer.com/*" },
-        { "url": "https://link.deezer.com/*" },
-        { "url": "https://deezer.page.link/*" },
-        { "url": "https://dzr.page.link/*" }
+        {
+          "url": "https://api.deezer.com/*"
+        },
+        {
+          "url": "https://link.deezer.com/*"
+        },
+        {
+          "url": "https://deezer.page.link/*"
+        },
+        {
+          "url": "https://dzr.page.link/*"
+        }
       ]
     }
   ]

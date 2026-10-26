@@ -16,7 +16,7 @@
 		<!-- svelte-ignore a11y_autofocus -->
 		<button class="btn quiet" type="button" autofocus onclick={() => (open = false)}>Cancel</button>
 		<button
-			class="btn danger"
+			class="btn destructive"
 			type="button"
 			onclick={() => {
 				open = false;
@@ -25,3 +25,15 @@
 		>
 	{/snippet}
 </Dialog>
+
+<style>
+	/* Destructive buttons in Apple alerts are filled red. */
+	.destructive {
+		background: var(--bad);
+		color: var(--on-color);
+	}
+
+	.destructive:hover:not(:disabled) {
+		background: color-mix(in srgb, var(--bad) 85%, black);
+	}
+</style>

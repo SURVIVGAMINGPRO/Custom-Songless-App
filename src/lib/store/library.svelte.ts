@@ -1,6 +1,6 @@
 import { dailyPick, draw } from '../game/deck.ts';
 import { DEFAULT_STEPS, emptyStats, newRound, recordRound } from '../game/engine.ts';
-import type { Game, GuessScope, Library, Mode, Playlist, Round, Song, Stats, Unmatched } from '../game/types.ts';
+import type { Appearance, Game, GuessScope, Library, Mode, Playlist, Round, Song, Stats, Unmatched } from '../game/types.ts';
 import { get, set } from './db.ts';
 
 const KEY = 'library';
@@ -20,7 +20,7 @@ function emptyLibrary(): Library {
 		songs: {},
 		playlists: [],
 		games: [],
-		settings: { volume: 0.8, mode: 'unlimited', seenHelp: false }
+		settings: { volume: 0.8, appearance: 'system', mode: 'unlimited', seenHelp: false }
 	};
 }
 
@@ -319,6 +319,11 @@ class LibraryStore {
 
 	setVolume(v: number): void {
 		this.data.settings.volume = v;
+		this.save();
+	}
+
+	setAppearance(appearance: Appearance): void {
+		this.data.settings.appearance = appearance;
 		this.save();
 	}
 

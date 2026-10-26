@@ -9,96 +9,59 @@
 	}: { playing: boolean; loading: boolean; label: string; onclick: () => void } = $props();
 </script>
 
-<div class="wrap" class:playing>
-	<span class="ring" aria-hidden="true"></span>
-	<span class="ring late" aria-hidden="true"></span>
-	<button type="button" class="play" aria-label={playing ? 'Stop' : label} aria-busy={loading} {onclick}>
-		{#if loading}
-			<span class="spinner" aria-hidden="true"></span>
-		{:else if playing}
-			<span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
-		{:else}
-			<Icon name="play" size={30} />
-		{/if}
-	</button>
-</div>
+<button type="button" class="play" class:playing aria-label={playing ? 'Stop' : label} aria-busy={loading} {onclick}>
+	{#if loading}
+		<span class="spinner" aria-hidden="true">
+			{#each { length: 8 }, i (i)}<i style:--k={i}></i>{/each}
+		</span>
+	{:else if playing}
+		<span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+	{:else}
+		<Icon name="play" size={28} />
+	{/if}
+</button>
 
 <style>
-	.wrap {
-		position: relative;
-		display: grid;
-		place-items: center;
-		width: 72px;
-		height: 72px;
-		margin: 32px auto 0;
-	}
-
 	.play {
-		position: relative;
-		z-index: 1;
 		display: grid;
 		place-items: center;
-		width: 72px;
-		height: 72px;
+		width: 64px;
+		height: 64px;
+		margin: 0 auto;
 		border: 0;
 		border-radius: var(--r-full);
 		background: var(--accent);
 		color: var(--accent-ink);
-		box-shadow: 0 10px 30px rgb(255 224 66 / 0.18);
+		box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 35%, transparent);
 		transition:
 			background-color var(--t-fast),
-			box-shadow var(--t-med),
-			transform var(--t-med) var(--ease-pop);
+			transform var(--t-med) var(--ease-pop),
+			box-shadow var(--t-med);
 	}
 
 	.play :global(svg) {
-		margin-left: 4px;
+		margin-left: 3px;
 	}
 
 	.play:hover {
 		background: var(--accent-hover);
-		box-shadow: 0 12px 40px var(--accent-glow);
-		transform: scale(1.05);
+		transform: scale(1.04);
 	}
 
 	.play:active {
 		transform: scale(0.94);
 	}
 
-	/* While a clip plays, two rings ripple outwards. */
-	.ring {
-		position: absolute;
-		inset: 0;
-		border: 2px solid var(--accent);
-		border-radius: var(--r-full);
-		opacity: 0;
-		pointer-events: none;
+	.playing {
+		box-shadow: 0 6px 22px color-mix(in srgb, var(--accent) 50%, transparent);
 	}
 
-	.playing .ring {
-		animation: ripple 1.4s var(--ease-out) infinite;
-	}
-
-	.playing .ring.late {
-		animation-delay: 0.7s;
-	}
-
-	@keyframes ripple {
-		from {
-			opacity: 0.55;
-			transform: scale(1);
-		}
-		to {
-			opacity: 0;
-			transform: scale(1.7);
-		}
-	}
-
+	/* Now-playing bars, as in Apple Music */
 	.eq {
 		display: flex;
 		align-items: flex-end;
 		gap: 3px;
-		height: 24px;
+		height: 22px;
 	}
 
 	.eq i {
@@ -132,35 +95,46 @@
 		}
 	}
 
+	/* Apple-style activity indicator: eight spokes fading in turn */
 	.spinner {
-		width: 26px;
-		height: 26px;
-		border: 3px solid rgb(28 24 0 / 0.25);
-		border-top-color: var(--accent-ink);
-		border-radius: var(--r-full);
-		animation: spin 0.8s linear infinite;
+		position: relative;
+		width: 24px;
+		height: 24px;
 	}
 
-	@keyframes spin {
+	.spinner i {
+		position: absolute;
+		top: 0;
+		left: 50%;
+		width: 3px;
+		height: 7px;
+		margin-left: -1.5px;
+		border-radius: 2px;
+		background: currentColor;
+		transform: rotate(calc(var(--k) * 45deg));
+		transform-origin: 1.5px 12px;
+		animation: spoke 0.8s linear infinite;
+		animation-delay: calc(var(--k) * 0.1s - 0.8s);
+	}
+
+	@keyframes spoke {
+		from {
+			opacity: 1;
+		}
 		to {
-			transform: rotate(360deg);
+			opacity: 0.2;
 		}
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.playing .ring {
-			animation: none;
-			opacity: 0.4;
-			transform: scale(1.25);
-		}
-
-		.playing .ring.late {
-			opacity: 0;
-		}
-
 		.eq i {
 			animation: none;
 			transform: scaleY(0.7);
+		}
+
+		.spinner i {
+			animation: none;
+			opacity: calc(0.2 + var(--k) * 0.1);
 		}
 	}
 </style>

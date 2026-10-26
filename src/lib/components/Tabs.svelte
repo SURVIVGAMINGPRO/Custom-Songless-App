@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 
+	/** A segmented control, as in macOS and iOS: a thumb glides to the chosen segment. */
 	let {
 		tabs,
 		value = $bindable(),
@@ -14,14 +15,13 @@
 	} = $props();
 
 	let list: HTMLDivElement;
-	/** The pill behind the selected tab glides to it. */
-	let pill = $state({ x: 0, w: 0, ready: false });
+	let thumb = $state({ x: 0, w: 0, ready: false });
 
 	async function place() {
 		await tick();
 		const el = list?.querySelector<HTMLButtonElement>('[aria-selected="true"]');
 		if (!el) return;
-		pill = { x: el.offsetLeft, w: el.offsetWidth, ready: true };
+		thumb = { x: el.offsetLeft, w: el.offsetWidth, ready: true };
 	}
 
 	$effect(() => {
@@ -50,15 +50,16 @@
 	}
 </script>
 
-<div class="tabs {size}" role="tablist" aria-label={label} bind:this={list} tabindex="-1" {onkeydown}>
+<div class="seg {size}" role="tablist" aria-label={label} bind:this={list} tabindex="-1" {onkeydown}>
 	<span
-		class="pill"
-		class:ready={pill.ready}
-		style:width="{pill.w}px"
-		style:transform="translateX({pill.x}px)"
+		class="thumb"
+		class:ready={thumb.ready}
+		style:width="{thumb.w}px"
+		style:transform="translateX({thumb.x}px)"
 		aria-hidden="true"
 	></span>
-	{#each tabs as tab (tab.key)}
+	{#each tabs as tab, i (tab.key)}
+		{#if i > 0}<span class="divider" class:hidden={tab.key === value || tabs[i - 1].key === value} aria-hidden="true"></span>{/if}
 		<button
 			type="button"
 			role="tab"
@@ -73,86 +74,84 @@
 </div>
 
 <style>
-	.tabs {
+	.seg {
 		position: relative;
-		display: flex;
-		width: max-content;
+		display: inline-flex;
+		align-items: center;
 		max-width: 100%;
-		margin: 0 auto;
-		padding: 4px;
-		border: 1px solid var(--line);
-		border-radius: var(--r-full);
-		background: var(--surface);
+		padding: 2px;
+		border-radius: 9px;
+		background: var(--fill-2);
 		overflow-x: auto;
 		scrollbar-width: none;
 	}
 
-	.tabs::-webkit-scrollbar {
+	.seg::-webkit-scrollbar {
 		display: none;
 	}
 
-	.tabs:focus {
+	.seg:focus {
 		outline: none;
 	}
 
-	.pill {
+	.thumb {
 		position: absolute;
-		top: 4px;
-		bottom: 4px;
+		top: 2px;
+		bottom: 2px;
 		left: 0;
-		border-radius: var(--r-full);
-		background: var(--surface-3);
-		box-shadow: 0 1px 0 rgb(255 255 255 / 0.06) inset;
+		border-radius: 7px;
+		background: var(--thumb);
+		box-shadow:
+			0 0 0 0.5px rgb(0 0 0 / 0.04),
+			0 2px 6px rgb(0 0 0 / 0.12);
 		opacity: 0;
 	}
 
-	.pill.ready {
+	.thumb.ready {
 		opacity: 1;
 		transition:
 			transform var(--t-med) var(--ease-out),
 			width var(--t-med) var(--ease-out);
 	}
 
+	.divider {
+		flex: none;
+		width: 1px;
+		height: 14px;
+		background: var(--line-strong);
+		transition: opacity var(--t-fast);
+	}
+
+	.divider.hidden {
+		opacity: 0;
+	}
+
 	button {
 		position: relative;
 		flex: 1 0 auto;
-		min-width: 96px;
+		min-width: 88px;
 		max-width: 220px;
-		height: 36px;
-		padding: 0 18px;
+		height: 30px;
+		padding: 0 14px;
 		border: 0;
-		border-radius: var(--r-full);
+		border-radius: 7px;
 		background: transparent;
-		color: var(--fg-3);
+		color: var(--fg);
 		font-size: var(--fs-sm);
-		font-weight: 600;
+		font-weight: 500;
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
-		transition: color var(--t-fast);
-	}
-
-	button:hover {
-		color: var(--fg-2);
 	}
 
 	button[aria-selected='true'] {
-		color: var(--fg);
-	}
-
-	.small {
-		padding: 3px;
-	}
-
-	.small .pill {
-		top: 3px;
-		bottom: 3px;
+		font-weight: 600;
 	}
 
 	.small button {
 		min-width: 0;
-		height: 30px;
-		padding: 0 14px;
-		font-size: var(--fs-xs);
+		height: 26px;
+		padding: 0 12px;
+		font-size: var(--fs-sm);
 	}
 </style>

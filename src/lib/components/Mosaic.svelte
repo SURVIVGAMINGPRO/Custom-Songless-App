@@ -45,12 +45,14 @@
 	}
 
 	.quad {
-		grid-template-columns: 1fr 1fr;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		grid-template-rows: repeat(2, minmax(0, 1fr));
 	}
 
 	img {
 		width: 100%;
 		height: 100%;
+		min-height: 0;
 		object-fit: cover;
 		transition: transform var(--t-slow) var(--ease-out);
 	}

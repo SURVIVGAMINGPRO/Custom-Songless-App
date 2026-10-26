@@ -17,19 +17,19 @@
 	}
 
 	p {
-		font-size: 14px;
+		font-size: var(--fs-sm);
 	}
 
 	.track {
 		height: 6px;
 		overflow: hidden;
 		border-radius: var(--r-full);
-		background: var(--line);
+		background: var(--fill-2);
 	}
 
 	.fill {
 		height: 100%;
-		background: var(--good);
+		background: var(--accent);
 		transform-origin: left;
 		transition: transform var(--t-med) var(--ease-out);
 	}

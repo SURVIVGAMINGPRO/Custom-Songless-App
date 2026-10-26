@@ -6,133 +6,119 @@
 	let { open = $bindable(false) }: { open?: boolean } = $props();
 
 	const ladder = DEFAULT_STEPS.map((s) => formatSeconds(s, true)).join(', ');
+	const rows = [
+		{ kind: 'bad', glyph: 'm8.8 8.8 6.4 6.4M15.2 8.8l-6.4 6.4', text: 'Wrong artist and song' },
+		{
+			kind: 'near',
+			glyph: 'M12 12.2a2.4 2.4 0 1 0 0-4.8 2.4 2.4 0 0 0 0 4.8ZM7.6 17c.6-2 2.3-3 4.4-3s3.8 1 4.4 3',
+			text: 'Right artist, wrong song'
+		},
+		{ kind: 'good', glyph: 'm7.5 12.5 3 3 6-6.5', text: 'Got it' }
+	];
 </script>
 
-<Dialog bind:open title="How to play">
-	<p class="lead">Listen to a tiny clip and guess the song. Each wrong guess or skip unlocks a longer clip.</p>
+<Dialog bind:open title="How to Play">
+	<p class="lead">
+		Listen to a tiny clip from your playlist and guess the song. Each wrong guess or skip plays a longer clip.
+	</p>
 
-	<div class="demo">
-		<div class="bar" aria-hidden="true">
-			<span class="lit"></span><span class="lit"></span><span></span><span></span><span></span>
-		</div>
-		<div class="row">
-			<span class="play"><Icon name="play" size={14} /></span>
-			<span>Play the current clip</span>
-		</div>
-		<div class="row">
-			<span class="skip">Skip</span>
-			<span>Move on to a longer clip</span>
-		</div>
-		<hr />
-		<div class="row"><span class="swatch bad"></span><span>Wrong artist and song</span></div>
-		<div class="row"><span class="swatch near"></span><span>Right artist, wrong song</span></div>
-		<div class="row"><span class="swatch good"></span><span>Got it</span></div>
-	</div>
+	<ul class="group">
+		<li class="row">
+			<span class="play"><Icon name="play" size={12} /></span>
+			<span class="text">Play the current clip</span>
+		</li>
+		<li class="row">
+			<span class="skip"><Icon name="forward" size={13} /></span>
+			<span class="text">Skip to a longer clip</span>
+		</li>
+		{#each rows as r (r.kind)}
+			<li class="row {r.kind}">
+				<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" /><path d={r.glyph} /></svg>
+				<span class="text">{r.text}</span>
+			</li>
+		{/each}
+	</ul>
 
-	<p class="small muted">
-		Clips are {ladder} long, five tries in all. They come from each song's 30-second Deezer preview,
-		which often starts partway into the song.
+	<p class="small">
+		Search shows only songs from the playlist you're playing. Clips are {ladder} long, five tries in all, taken from
+		each song's 30-second Deezer preview (which often starts partway into the song).
 	</p>
 </Dialog>
 
 <style>
 	.lead {
+		margin-bottom: 14px;
 		color: var(--fg-2);
-		margin-bottom: 16px;
 	}
 
-	.demo {
-		display: grid;
-		gap: 12px;
-		padding: 16px;
-		border: 1px solid var(--line);
-		border-radius: var(--r-lg);
-		background: var(--bg);
-	}
-
-	.bar {
-		display: grid;
-		grid-template-columns: 1fr 1fr 2fr 4fr 6fr;
-		gap: 2px;
-		height: 14px;
-	}
-
-	.bar span {
-		background: var(--line);
-	}
-
-	.bar span {
-		border-radius: 3px;
-	}
-
-	.bar span:first-child {
-		border-radius: var(--r-full) 3px 3px var(--r-full);
-	}
-
-	.bar span:last-child {
-		border-radius: 3px var(--r-full) var(--r-full) 3px;
-	}
-
-	.bar .lit {
-		background: var(--accent);
+	.group {
+		background: var(--fill-3);
 	}
 
 	.row {
 		display: flex;
 		align-items: center;
 		gap: 12px;
-		font-size: 15px;
+		padding: 10px 14px;
+		font-size: var(--fs-md);
+	}
+
+	.play,
+	.skip,
+	svg {
+		display: grid;
+		flex: none;
+		place-items: center;
+		width: 24px;
+		height: 24px;
+		border-radius: var(--r-full);
 	}
 
 	.play {
-		display: grid;
-		place-items: center;
-		width: 28px;
-		height: 28px;
-		border-radius: var(--r-full);
 		background: var(--accent);
 		color: var(--accent-ink);
 	}
 
-	.skip {
-		display: grid;
-		place-items: center;
-		width: 48px;
-		height: 28px;
-		border: 1px solid var(--line-strong);
-		border-radius: var(--r-full);
-		color: var(--fg-2);
-		font-size: 12px;
-		font-weight: 600;
+	.play :global(svg) {
+		margin-left: 1px;
 	}
 
-	.swatch {
-		width: 28px;
-		height: 28px;
-		border-radius: var(--r-sm);
+	.skip {
+		background: var(--fill);
+		color: var(--fg-2);
+	}
+
+	circle {
+		fill: currentColor;
+	}
+
+	path {
+		fill: none;
+		stroke: var(--on-color);
+		stroke-width: 2;
+		stroke-linecap: round;
+		stroke-linejoin: round;
 	}
 
 	.bad {
-		background: var(--bad);
+		color: var(--bad);
 	}
 
 	.near {
-		background: var(--near);
+		color: var(--near);
 	}
 
 	.good {
-		background: var(--good);
+		color: var(--good);
 	}
 
-	hr {
-		width: 100%;
-		margin: 0;
-		border: 0;
-		border-top: 1px solid var(--line);
+	.text {
+		color: var(--fg);
 	}
 
 	.small {
-		margin-top: 16px;
-		font-size: 13px;
+		margin-top: 14px;
+		color: var(--fg-3);
+		font-size: var(--fs-sm);
 	}
 </style>

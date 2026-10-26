@@ -98,7 +98,7 @@ export interface Game {
 	playlistIds: string[];
 	/** Clip length in seconds for each attempt. */
 	steps: number[];
-	/** Where guesses come from: all of Deezer, or only this game's songs. */
+	/** Kept for older saves; guesses always come from the game's own songs now. */
 	guessScope: GuessScope;
 	/** Keyed by tab ('all' or a playlist ID). */
 	decks: Record<string, Deck>;
@@ -112,9 +112,12 @@ export interface Game {
 	updatedAt: number;
 }
 
+export type Appearance = 'system' | 'light' | 'dark';
+
 export interface Settings {
 	/** 0 to 1. */
 	volume: number;
+	appearance: Appearance;
 	mode: Mode;
 	gameId?: string;
 	seenHelp: boolean;

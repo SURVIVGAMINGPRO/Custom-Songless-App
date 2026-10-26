@@ -3,13 +3,14 @@
 	import Icon from './Icon.svelte';
 	import Mosaic from './Mosaic.svelte';
 
+	/** An artwork tile like Apple Music's: press the art to play, the name to open. */
 	let {
 		title,
 		meta,
 		tag,
 		songs,
 		seed,
-		editHref,
+		href,
 		stacked = false,
 		index = 0,
 		onplay
@@ -20,167 +21,158 @@
 		tag?: string;
 		songs: Song[];
 		seed: string;
-		editHref: string;
-		/** Mixes look like a small stack of records. */
+		/** Where the name leads (the playlist page or the mix editor). */
+		href: string;
+		/** Mixes look like a small stack. */
 		stacked?: boolean;
 		index?: number;
 		onplay: () => void;
 	} = $props();
 </script>
 
-<article class="pcard rise" class:stacked style:--i={index}>
-	<button class="cover" type="button" onclick={onplay} aria-label="Play {title}">
-		<span class="art"><Mosaic {songs} {seed} /></span>
-		<span class="fab" aria-hidden="true"><Icon name="play" size={22} /></span>
-	</button>
-	<div class="info">
-		<div class="names">
-			<h3 class="name" title={title}>{title}</h3>
-			<p class="meta">
-				{meta}
-				{#if tag}<span class="tag">{tag}</span>{/if}
-			</p>
-		</div>
-		<a class="icon-btn edit" href={editHref} aria-label="Edit {title}" title="Edit">
-			<Icon name="edit" size={18} />
-		</a>
+<article class="tile rise" class:stacked style:--i={index}>
+	<div class="art-wrap">
+		<button class="art" type="button" onclick={onplay} aria-label="Play {title}">
+			<Mosaic {songs} {seed} radius="var(--r-md)" />
+			<span class="shade" aria-hidden="true"></span>
+			<span class="play" aria-hidden="true"><Icon name="play" size={18} /></span>
+		</button>
 	</div>
+	<a class="name" {href} title={title}>{title}</a>
+	<p class="meta">
+		{meta}
+		{#if tag}<span class="tag">{tag}</span>{/if}
+	</p>
 </article>
 
 <style>
-	.pcard {
+	.tile {
 		display: grid;
-		gap: 12px;
+		align-content: start;
+		gap: 2px;
 		min-width: 0;
 	}
 
-	.cover {
+	.art-wrap {
 		position: relative;
-		display: block;
-		padding: 0;
-		border: 0;
-		border-radius: var(--r-lg);
-		background: none;
-		transition: transform var(--t-med) var(--ease-out);
+		margin-bottom: 8px;
+	}
+
+	/* Mixes: two sleeves peek out above the art. */
+	.stacked .art-wrap::before,
+	.stacked .art-wrap::after {
+		content: '';
+		position: absolute;
+		left: 8%;
+		right: 8%;
+		height: 10px;
+		border-radius: var(--r-md) var(--r-md) 0 0;
+		background: var(--surface-3);
+	}
+
+	.stacked .art-wrap::before {
+		top: -10px;
+		left: 14%;
+		right: 14%;
+		opacity: 0.6;
+	}
+
+	.stacked .art-wrap::after {
+		top: -5px;
+		opacity: 0.9;
 	}
 
 	.art {
 		position: relative;
 		z-index: 1;
 		display: block;
-		overflow: hidden;
-		border-radius: var(--r-lg);
-		box-shadow: var(--shadow-card);
-		transition:
-			box-shadow var(--t-med),
-			transform var(--t-slow) var(--ease-out);
+		width: 100%;
+		padding: 0;
+		border: 0;
+		border-radius: var(--r-md);
+		background: none;
+		box-shadow: var(--shadow-art);
+		transition: transform var(--t-med) var(--ease-out);
 	}
 
-	/* Mixes: two sleeves peek out behind the art. */
-	.stacked .cover::before,
-	.stacked .cover::after {
-		content: '';
+	.art :global(.mosaic) {
+		box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.1);
+	}
+
+	.shade {
 		position: absolute;
 		inset: 0;
-		border: 1px solid var(--line-lit);
-		border-radius: var(--r-lg);
-		background: var(--surface-3);
-		transition: transform var(--t-slow) var(--ease-out);
+		border-radius: var(--r-md);
+		background: linear-gradient(to top, rgb(0 0 0 / 0.35), transparent 55%);
+		opacity: 0;
+		transition: opacity var(--t-med) var(--ease-out);
 	}
 
-	.stacked .cover::before {
-		transform: translate(12px, -12px) scale(0.92);
-		opacity: 0.55;
-	}
-
-	.stacked .cover::after {
-		transform: translate(6px, -6px) scale(0.96);
-		opacity: 0.85;
-	}
-
-	.cover:hover .art,
-	.cover:focus-visible .art {
-		transform: translateY(-4px) rotate(-1deg);
-		box-shadow: 0 20px 40px rgb(0 0 0 / 0.5);
-	}
-
-	.stacked .cover:hover::before {
-		transform: translate(16px, -14px) scale(0.94) rotate(3deg);
-	}
-
-	.stacked .cover:hover::after {
-		transform: translate(8px, -8px) scale(0.97) rotate(1.5deg);
-	}
-
-	.cover:hover :global(img) {
-		transform: scale(1.04);
-	}
-
-	.cover:active .art {
-		transform: translateY(-1px) scale(0.98);
-	}
-
-	.cover:focus-visible {
-		outline-offset: 4px;
-	}
-
-	.fab {
+	.play {
 		position: absolute;
-		right: 12px;
-		bottom: 12px;
-		z-index: 2;
+		left: 10px;
+		bottom: 10px;
 		display: grid;
 		place-items: center;
-		width: 52px;
-		height: 52px;
+		width: 36px;
+		height: 36px;
 		border-radius: var(--r-full);
-		background: var(--accent);
-		color: var(--accent-ink);
-		box-shadow: 0 8px 24px rgb(0 0 0 / 0.45);
+		background: var(--glass);
+		color: var(--glass-ink);
+		box-shadow: 0 2px 10px rgb(0 0 0 / 0.25);
+		-webkit-backdrop-filter: blur(10px);
+		backdrop-filter: blur(10px);
 		opacity: 0;
-		transform: translateY(10px) scale(0.85);
+		transform: scale(0.85);
 		transition:
 			opacity var(--t-med) var(--ease-out),
-			transform var(--t-med) var(--ease-pop);
+			transform var(--t-med) var(--ease-pop),
+			background-color var(--t-fast);
 	}
 
-	.fab :global(svg) {
-		margin-left: 3px;
+	.play :global(svg) {
+		margin-left: 2px;
 	}
 
-	.cover:hover .fab,
-	.cover:focus-visible .fab {
+	.art:hover .shade,
+	.art:focus-visible .shade,
+	.art:hover .play,
+	.art:focus-visible .play {
 		opacity: 1;
+	}
+
+	.art:hover .play,
+	.art:focus-visible .play {
 		transform: none;
 	}
 
-	/* Touch screens have no hover: keep the play button showing. */
+	.play:hover {
+		background: var(--accent);
+	}
+
+	.art:active {
+		transform: scale(0.98);
+	}
+
 	@media (hover: none) {
-		.fab {
+		.play {
 			opacity: 1;
 			transform: none;
 		}
 	}
 
-	.info {
-		display: flex;
-		align-items: flex-start;
-		gap: 4px;
-		min-width: 0;
-	}
-
-	.names {
-		flex: 1;
-		min-width: 0;
-	}
-
 	.name {
 		overflow: hidden;
-		font-size: var(--fs-lg);
-		font-weight: 700;
-		letter-spacing: -0.01em;
+		font-size: var(--fs-md);
+		font-weight: 600;
+		text-decoration: none;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+	}
+
+	.name:hover {
+		text-decoration: underline;
+		text-underline-offset: 2px;
 	}
 
 	.meta {
@@ -191,23 +183,12 @@
 	.tag {
 		display: inline-block;
 		margin-left: 4px;
-		padding: 0 8px;
+		padding: 0 7px;
 		border-radius: var(--r-full);
-		background: rgb(255 159 69 / 0.14);
+		background: var(--near-wash);
 		color: var(--near);
 		font-size: var(--fs-xs);
 		font-weight: 600;
-		line-height: 20px;
-	}
-
-	.edit {
-		width: 34px;
-		height: 34px;
-		margin-top: -4px;
-		color: var(--fg-4);
-	}
-
-	.edit:hover {
-		color: var(--fg);
+		line-height: 18px;
 	}
 </style>

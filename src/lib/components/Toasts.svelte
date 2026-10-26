@@ -5,7 +5,7 @@
 
 <div class="toasts" role="status" aria-live="polite">
 	{#each toasts.items as t (t.id)}
-		<div class="toast" class:error={t.kind === 'error'} transition:fly={{ y: 12, duration: 220 }}>
+		<div class="toast" class:error={t.kind === 'error'} transition:fly={{ y: 16, duration: 250 }}>
 			{t.text}
 		</div>
 	{/each}
@@ -27,17 +27,20 @@
 		pointer-events: none;
 	}
 
+	/* A HUD capsule, as macOS shows for volume and copy confirmations. */
 	.toast {
-		padding: 10px 16px;
-		border: 1px solid var(--line-strong);
-		border-radius: var(--r-md);
-		background: var(--surface-2);
+		padding: 10px 18px;
+		border-radius: var(--r-full);
+		background: var(--material);
+		-webkit-backdrop-filter: saturate(180%) blur(24px);
+		backdrop-filter: saturate(180%) blur(24px);
 		color: var(--fg);
-		font-size: 14px;
-		box-shadow: 0 12px 32px rgb(0 0 0 / 0.4);
+		font-size: var(--fs-sm);
+		font-weight: 500;
+		box-shadow: var(--shadow-pop);
 	}
 
 	.error {
-		border-color: var(--bad);
+		color: var(--bad);
 	}
 </style>

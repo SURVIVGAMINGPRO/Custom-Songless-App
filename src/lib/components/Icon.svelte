@@ -21,7 +21,17 @@
 		chart: 'M5 20V10M12 20V4M19 20v-7',
 		list: 'M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01',
 		grid: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
-		refresh: 'M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7',
+		sidebar: 'M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1ZM9.5 5v14',
+		'chevron-left': 'm15 6-6 6 6 6',
+		ellipsis: 'M6 12h.01M12 12h.01M18 12h.01',
+		library: 'M8 3.5h8M5.5 7h13M5 10.5h14a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Z',
+		sun: 'M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4',
+		moon: 'M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z',
+		display: 'M4 4.5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1ZM9 20.5h6M12 16.5v4',
+		forward: 'M4.5 6.5v11l7-5.5-7-5.5ZM12.5 6.5v11l7-5.5-7-5.5Z',
+		speaker: 'M4 9.5h3.5L12 5.5v13l-4.5-4H4v-5ZM16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11',
+		'plus-circle': 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM12 8v8M8 12h8',
+		'refresh': 'M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7',
 		edit: 'M4 20h4L19 9l-4-4L4 16v4ZM13.5 6.5l4 4',
 		'arrow-left': 'M19 12H5M11 6l-6 6 6 6',
 		calendar: 'M8 3v3M16 3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z',
@@ -36,13 +46,13 @@
 		marker: 'M5 8h14l-7 9z'
 	} as const;
 
-	const FILLED = new Set(['play', 'stop', 'marker']);
+	const FILLED = new Set(['play', 'stop', 'marker', 'forward']);
 
 	export type IconName = keyof typeof PATHS;
 </script>
 
 <script lang="ts">
-	let { name, size = 24, label }: { name: IconName; size?: number; label?: string } = $props();
+	let { name, size = 24, label, weight = 1.8 }: { name: IconName; size?: number; label?: string; weight?: number } = $props();
 	const filled = $derived(FILLED.has(name));
 </script>
 
@@ -52,7 +62,7 @@
 	viewBox="0 0 24 24"
 	fill={filled ? 'currentColor' : 'none'}
 	stroke={filled ? 'none' : 'currentColor'}
-	stroke-width="1.8"
+	stroke-width={weight}
 	stroke-linecap="round"
 	stroke-linejoin="round"
 	role={label ? 'img' : undefined}

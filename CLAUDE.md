@@ -7,7 +7,9 @@ TypeScript UI, which also runs as a web app. Public repo: never commit secrets, 
 ## Hard rules
 
 1. **The user's playlists are the point.** Home is their playlist library; pressing a cover plays that playlist.
-   Endless is the main mode; "Today's song" is secondary.
+   Endless is the main mode; "Today's song" is secondary. **Guess search only offers songs from the playlist (or
+   mix) being played** (`searchSongs` in `src/lib/game/search.ts`), never Deezer's whole catalogue. Deezer search is
+   only for adding songs to a playlist.
 2. **No Spotify API, no scraping Spotify.** Spotify's developer policy bans games. Spotify playlists only come in
    as CSV files the user exports themselves (Exportify etc.). Links to `open.spotify.com/track/…` are fine.
 3. **Audio is Deezer's 30 s previews only**, fetched fresh per round (links expire after ~15 min) and kept in
@@ -51,14 +53,22 @@ scripts/make-icons.mjs  renders the app icon from assets/logo.svg (npm run icons
 - `$app/state` (not `$app/stores`), `resolve()` from `$app/paths` for links, `Response.json()` not `json()`.
 - `ssr = false` for the whole app (`src/routes/+layout.ts`): pages render in the browser.
 
-## Design ("record shop after hours")
+## Design (after Apple's apps)
 
-Near-black room, album covers as the colour, the logo's yellow `#ffe042` as the one action colour (buttons, focus,
-progress). Results: green `#3ddc97`, orange `#ff9f45`, red `#ff5468`. Bricolage Grotesque (display) and DM Sans
-(text), both bundled from @fontsource. Every colour, size and duration is a token in `src/app.css`. Motion: the
-VC Alert launch logo (hold, then slide-out-fwd-center), page cross-fades (View Transitions), staggered `.rise`
-entrances, cards that lift, rows that flip/shake/pop, ripple rings and equalizer bars while a clip plays, and the
-answer's record sliding out of its sleeve. Reduced motion turns movement off. Check 375 px wide and 1180 px.
+Modelled on Music for macOS and Apple's HIG ("Liquid Glass": translucent material only for navigation and
+controls, content on a plain layer, colour used sparingly). A sidebar (`Sidebar.svelte`) with Playlists, Add
+Playlist, Stats, the user's playlists and mixes, and Settings; it slides over the content below 760 px. Large
+titles, inset grouped lists (`.group`), segmented controls (`Tabs.svelte`), capsule buttons, the system font
+(SF Pro on Mac, Segoe UI on Windows; `ui-rounded` for numbers). Light and dark come from Apple's system colours;
+`src/app.html` picks the theme before the page draws, Settings → Appearance can override it. The logo's yellow is
+the tint (`--accent`; `--accent-text` for yellow text). Results: green/orange/red tints plus an icon in each row.
+Every colour, size and duration is a token in `src/app.css`; text tokens are checked at 4.5:1 in both themes.
+Motion: the VC Alert launch logo (hold, then slide-out-fwd-center), page cross-fades (View Transitions), `.rise`
+entrances, a gliding segmented thumb, rows that pop/nudge, equalizer bars while a clip plays, and the answer's
+artwork growing while the preview plays. Reduced motion and reduced transparency are respected.
+The Mac app hides its title bar (`src-tauri/tauri.macos.conf.json`); `html.mac-app` sets `--titlebar` so the
+sidebar and toolbar leave room for the window buttons, and those strips are `data-tauri-drag-region`.
+Check 375 px wide and 1100 px, light and dark.
 
 ## Versioning and releases
 

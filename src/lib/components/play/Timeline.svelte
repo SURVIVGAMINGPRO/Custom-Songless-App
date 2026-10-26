@@ -1,11 +1,10 @@
 <script lang="ts">
-	import Icon from '#lib/components/Icon.svelte';
-
 	let {
 		steps,
 		unlocked,
 		position,
-		label
+		label,
+		detail
 	}: {
 		/** Where each clip ends, in seconds. */
 		steps: number[];
@@ -13,7 +12,10 @@
 		unlocked: number;
 		/** Seconds played of the current clip. */
 		position: number;
+		/** The clip length, like "0.1 seconds". */
 		label: string;
+		/** Right-hand note, like "Try 1 of 5". */
+		detail: string;
 	} = $props();
 
 	const total = $derived(steps[steps.length - 1]);
@@ -23,13 +25,13 @@
 			return { start, grow: end - start };
 		})
 	);
-	/** The end of the unlocked clip, as a share of the bar. */
-	const at = $derived((steps[Math.min(unlocked, steps.length - 1)] / total) * 100);
 </script>
 
-<div class="timeline" style:--at="{at}%">
-	<p class="label">{label}</p>
-	<span class="tri"><Icon name="marker" size={20} /></span>
+<div class="timeline">
+	<div class="labels">
+		<p class="clip">{label}</p>
+		<p class="detail">{detail}</p>
+	</div>
 	<div
 		class="bar"
 		role="progressbar"
@@ -48,70 +50,54 @@
 </div>
 
 <style>
-	.timeline {
-		/* How far the label may hang past the ends of the bar. */
-		--room: 12px;
-		--label-w: 128px;
-		position: relative;
-		margin-top: 72px;
-	}
-
-	@media (min-width: 900px) {
-		.timeline {
-			--room: 120px;
-		}
-	}
-
-	.label {
-		position: absolute;
-		bottom: calc(100% + 16px);
-		left: clamp(calc(-1 * var(--room)), calc(var(--at) - var(--label-w) / 2), calc(100% - var(--label-w) + var(--room)));
-		width: var(--label-w);
-		font-family: var(--font-display);
-		font-size: 18px;
-		font-weight: 700;
-		line-height: 27px;
-		text-align: center;
-		white-space: nowrap;
-		transition: left var(--t-slow) var(--ease-out);
-	}
-
-	.tri {
-		position: absolute;
-		bottom: calc(100% - 4px);
-		left: var(--at);
+	.labels {
 		display: flex;
-		transform: translateX(-50%);
-		color: var(--fg);
-		transition: left var(--t-slow) var(--ease-out);
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 12px;
+		margin-bottom: 8px;
+	}
+
+	.clip {
+		font-family: var(--font-rounded);
+		font-size: var(--fs-lg);
+		font-weight: 700;
+		letter-spacing: -0.01em;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.detail {
+		color: var(--fg-3);
+		font-size: var(--fs-sm);
+		font-variant-numeric: tabular-nums;
 	}
 
 	.bar {
 		display: flex;
 		gap: 3px;
-		height: 22px;
+		height: 8px;
 	}
 
 	.seg {
 		position: relative;
 		flex-basis: 0;
-		min-width: 5px;
+		min-width: 6px;
 		overflow: hidden;
-		border-radius: 3px;
-		background: var(--surface-2);
+		border-radius: 2px;
+		background: var(--fill-3);
 		transition: background-color var(--t-med);
 	}
 
 	.seg:first-child {
-		border-radius: var(--r-full) 3px 3px var(--r-full);
+		border-radius: var(--r-full) 2px 2px var(--r-full);
 	}
 
 	.seg:last-child {
-		border-radius: 3px var(--r-full) var(--r-full) 3px;
+		border-radius: 2px var(--r-full) var(--r-full) 2px;
 	}
 
 	.seg.open {
-		background: var(--line-strong);
+		background: var(--fill);
 	}
 
 	.fill {
@@ -119,12 +105,5 @@
 		inset: 0;
 		background: var(--accent);
 		transform-origin: left;
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		.label,
-		.tri {
-			transition: none;
-		}
 	}
 </style>
