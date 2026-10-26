@@ -41,6 +41,7 @@
 		"@tauri-apps/plugin-opener": "^2.7.2"
 	},
 	"description": "Upload a Spotify playlist link to make your own custom songless games!",
+	"license": "MIT",
 	"engines": {
 		"node": ">=22.17"
 	}

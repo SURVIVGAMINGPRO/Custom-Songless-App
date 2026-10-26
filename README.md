@@ -50,7 +50,7 @@ Everything you make stays on your computer. Settings has a backup button.
   is listed for you to check.
 - Deezer's API terms allow private, non-commercial use only.
 
-Not connected with Deezer, Spotify or Lessgames. The logo is Google's Material Symbols
+Earshot is open source under the [MIT licence](LICENSE). Not connected with Deezer, Spotify or Lessgames. The logo is Google's Material Symbols
 `library_music` icon (Apache 2.0); fonts are Bricolage Grotesque and DM Sans (SIL Open Font License).
 
 ## Building it yourself

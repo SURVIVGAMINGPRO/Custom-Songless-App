@@ -3,6 +3,7 @@ name = "earshot"
 version = "1.0.0"
 description = "Earshot: guess songs from your own playlists"
 edition = "2021"
+license = "MIT"
 default-run = "earshot"
 
 [lib]
