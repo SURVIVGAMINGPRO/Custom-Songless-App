@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.2 (2026-10-26)
+
+- Search understands other alphabets: type Latin letters to find songs written in Cyrillic, Greek, Armenian, Georgian, Hebrew, Arabic, Persian, Hindi and eight other Indian scripts, Thai, Korean, Japanese kana and Chinese. "Bankomat" finds "Банкомат", "saranghae" finds "사랑해", "yueliang" finds "月亮代表我的心". Common spelling differences work too (pesnya, pesnja and pesnia all find "Песня").
+- Enter no longer skips by accident. The first Enter picks the highlighted song, the second guesses it. On an empty search, Enter skips only when pressed twice ("Press Enter again to skip" shows in between), and an extra Enter right after a guess is ignored. Shift-Enter and the Skip button still skip straight away.
+
 ## 1.1.1 (2026-10-26)
 
 - The play symbol sits in the middle of its button now.

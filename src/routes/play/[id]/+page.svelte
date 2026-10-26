@@ -15,7 +15,7 @@
 	import { type ActionId, actionFor, comboFromEvent, isMac, shortcutText, typesText } from '#lib/keys.ts';
 	import { dayNumber } from '#lib/game/deck.ts';
 	import { MAX_STEP, clipSeconds, formatSeconds, guess, shareText, skip, stepIndex } from '#lib/game/engine.ts';
-	import { searchSongs } from '#lib/game/search.ts';
+	import { prepareSearch, searchSongs } from '#lib/game/search.ts';
 	import type { GuessPick, Mode, Song } from '#lib/game/types.ts';
 	import { ALL, library } from '#lib/store/library.svelte.ts';
 	import { toasts } from '#lib/toast.svelte.ts';
@@ -62,6 +62,11 @@
 	const clip = $derived(round ? clipSeconds(round, steps) : 0);
 	const timelineSteps = $derived(playing || steps[steps.length - 1] >= MAX_STEP ? steps : [...steps, MAX_STEP]);
 	const unlocked = $derived(round && playing ? stepIndex(round, steps) : timelineSteps.length - 1);
+
+	// Chinese titles need the pinyin reader before they can be found by typing Latin letters.
+	$effect(() => {
+		void prepareSearch(gameSongs);
+	});
 
 	// Remember this as the game to come back to.
 	$effect(() => {
@@ -273,6 +278,7 @@
 					{#if playing}
 						<GuessBox
 							bind:this={guessBox}
+							guessKey={keyText('guess')}
 							search={searchGuesses}
 							onguess={onGuess}
 							onskip={onSkip}
@@ -280,7 +286,8 @@
 						/>
 						<p class="hint">
 							Guesses come from this {game.playlistIds.length > 1 ? 'mix' : 'playlist'}.
-							{#if keyText('guess')}<kbd>{keyText('guess')}</kbd> guesses or skips.{/if}
+							{#if keyText('guess')}<kbd>{keyText('guess')}</kbd> picks a song, then guesses it.{/if}
+							{#if keyText('skip')}<kbd>{keyText('skip')}</kbd> skips.{/if}
 							{#if keyText('play')}<kbd>{keyText('play')}</kbd> plays the clip.{/if}
 							<a href="{resolve('/settings')}#shortcuts">Shortcuts</a>
 						</p>

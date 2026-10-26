@@ -14,7 +14,8 @@
 		search,
 		onguess,
 		onskip,
-		guessed
+		guessed,
+		guessKey = null
 	}: {
 		/** Songs of the playlist matching what was typed (instant, no network). */
 		search: (q: string) => GuessOption[];
@@ -22,7 +23,14 @@
 		onskip: () => void;
 		/** IDs already guessed this round. */
 		guessed: number[];
+		/** The Guess shortcut as shown to the player, for the "press again to skip" note. */
+		guessKey?: string | null;
 	} = $props();
+
+	/** An Enter this soon after a guess is a second press out of habit, not a request to skip. */
+	const AFTER_GUESS_MS = 900;
+	/** How long "press again to skip" waits for the second press. */
+	const ARM_MS = 2000;
 
 	const uid = $props.id();
 	let input: HTMLInputElement;
@@ -31,8 +39,17 @@
 	let open = $state(false);
 	let active = $state(-1);
 	let picked = $state<GuessOption | null>(null);
+	let skipArmed = $state(false);
+	let armTimer: ReturnType<typeof setTimeout> | undefined;
+	let lastGuessAt = 0;
+
+	function disarm() {
+		skipArmed = false;
+		clearTimeout(armTimer);
+	}
 
 	function oninput() {
+		disarm();
 		picked = null;
 		results = search(query);
 		active = results.length ? 0 : -1;
@@ -55,9 +72,11 @@
 	}
 
 	function submit() {
+		disarm();
 		if (picked) {
 			if (guessed.includes(picked.id)) return;
 			const { id, title, artist, artists, isrc } = picked;
+			lastGuessAt = Date.now();
 			onguess({ id, title, artist, artists, isrc });
 		} else onskip();
 		reset();
@@ -81,24 +100,30 @@
 
 	let nudging = $state(false);
 
-	/** Guess the chosen (or highlighted) song; with nothing typed, skip. */
+	/**
+	 * The Guess shortcut (Enter): the first press picks the highlighted song, the
+	 * next one guesses it. On an empty search it skips only when pressed twice in
+	 * a row, so an extra press after a guess never skips by accident.
+	 */
 	export function guessOrSkip(): void {
 		if (picked) return submit();
 		const highlighted = open && active >= 0 ? results[active] : undefined;
-		if (highlighted && !guessed.includes(highlighted.id)) {
-			picked = highlighted;
-			return submit();
-		}
+		if (highlighted) return pick(highlighted);
 		if (!query.trim()) {
-			onskip();
-			return reset();
+			if (Date.now() - lastGuessAt < AFTER_GUESS_MS) return;
+			if (skipArmed) return submit();
+			skipArmed = true;
+			armTimer = setTimeout(disarm, ARM_MS);
+			return;
 		}
 		// Typed something that matches nothing: shake, don't guess.
 		nudging = false;
 		requestAnimationFrame(() => (nudging = true));
 	}
 
+	/** The Skip shortcut (Shift+Enter) and the Skip button skip at once. */
 	export function skipNow(): void {
+		disarm();
 		onskip();
 		reset();
 	}
@@ -175,20 +200,26 @@
 		{/if}
 	</div>
 	<!-- Clicking doesn't take focus from the search, so typing and shortcuts carry on. -->
-	<button
-		class="btn large action"
-		class:quiet={!picked}
-		type="button"
-		disabled={already}
-		onpointerdown={(e) => e.preventDefault()}
-		onclick={submit}
-	>
-		{#if picked}
-			{already ? 'Guessed' : 'Submit'}
-		{:else}
-			Skip <Icon name="forward" size={14} />
+	<div class="action-wrap">
+		{#if skipArmed}
+			<p class="armed-note" role="status">Press <kbd>{guessKey ?? 'Enter'}</kbd> again to skip</p>
 		{/if}
-	</button>
+		<button
+			class="btn large action"
+			class:quiet={!picked && !skipArmed}
+			class:armed={skipArmed}
+			type="button"
+			disabled={already}
+			onpointerdown={(e) => e.preventDefault()}
+			onclick={() => (picked ? submit() : skipNow())}
+		>
+			{#if picked}
+				{already ? 'Guessed' : 'Guess'}
+			{:else}
+				Skip <Icon name="forward" size={14} />
+			{/if}
+		</button>
+	</div>
 </div>
 
 <style>
@@ -382,9 +413,49 @@
 		font-weight: 600;
 	}
 
+	.action-wrap {
+		position: relative;
+		flex: none;
+	}
+
 	.action {
 		min-width: 104px;
-		flex: none;
+	}
+
+	.armed {
+		animation: armed 1s var(--ease-out) infinite;
+	}
+
+	@keyframes armed {
+		50% {
+			box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 35%, transparent);
+		}
+	}
+
+	.armed-note {
+		position: absolute;
+		right: 0;
+		bottom: calc(100% + 8px);
+		z-index: 5;
+		padding: 6px 10px;
+		border-radius: var(--r-md);
+		background: var(--material);
+		-webkit-backdrop-filter: saturate(180%) blur(20px);
+		backdrop-filter: saturate(180%) blur(20px);
+		box-shadow: var(--shadow-pop);
+		color: var(--fg);
+		font-size: var(--fs-sm);
+		white-space: nowrap;
+		animation: pop-in var(--t-med) var(--ease-out);
+	}
+
+	.armed-note kbd {
+		padding: 1px 5px;
+		border-radius: 4px;
+		background: var(--fill-2);
+		font-family: var(--font-body);
+		font-size: var(--fs-xs);
+		font-weight: 600;
 	}
 
 	@media (max-width: 480px) {

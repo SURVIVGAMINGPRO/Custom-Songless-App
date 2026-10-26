@@ -32,13 +32,15 @@ Inspired by [Songless](https://lessgames.com/songless), but the songs are yours.
 2. **Press Play on its cover.** You hear 0.1 seconds of a song. Guess it, or skip for a longer clip:
    0.1 s, 0.5 s, 2 s, 8 s, 15 s, five tries in all.
 3. **Search the playlist for your guess.** Suggestions only come from the songs in the playlist you're playing.
+   Titles in other alphabets can be typed in Latin letters: "Bankomat" finds "Банкомат", "saranghae" finds "사랑해".
 4. **Rows light up:** a tick for the right song, an artist icon for the right artist, a cross for a miss.
 
 - **Endless** deals a new song every round, with no repeats until every song in the playlist has played.
   **Today's song** is one song a day per playlist.
 - **Mixes** put several playlists in one game, each with its own tab.
 - **Stats** keep your streaks and how many tries each win took. Share a result as an emoji grid.
-- **Keyboard:** Enter guesses or skips, Shift-Enter skips, Space plays the clip, / jumps to the search.
+- **Keyboard:** Enter picks a song, Enter again guesses it, Shift-Enter skips (or Enter twice on an empty search),
+  Space plays the clip, / jumps to the search.
   Change any of them in Settings → Keyboard Shortcuts.
 
 It looks and feels like Apple's apps, in light or dark mode. Everything you make stays on your computer;

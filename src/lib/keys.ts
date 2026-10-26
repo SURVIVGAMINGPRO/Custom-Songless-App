@@ -18,7 +18,7 @@ export interface ShortcutAction {
 }
 
 export const ACTIONS: ShortcutAction[] = [
-	{ id: 'guess', label: 'Guess or Skip', detail: 'Guesses the chosen song; skips when the search is empty', default: 'Enter', when: 'playing' },
+	{ id: 'guess', label: 'Pick and Guess', detail: 'First press picks the highlighted song, the next guesses it; press twice on an empty search to skip', default: 'Enter', when: 'playing' },
 	{ id: 'skip', label: 'Skip', detail: 'Skips to a longer clip, even with something typed', default: 'Shift+Enter', when: 'playing' },
 	{ id: 'play', label: 'Play or Stop the Clip', detail: 'Space still types once the search has text', default: 'Space', when: 'always' },
 	{ id: 'next', label: 'Next Song', detail: 'After a round ends', default: 'Enter', when: 'finished' },

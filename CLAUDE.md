@@ -31,7 +31,8 @@ own single-playlist game (`gameForPlaylist`); games with 2+ playlists are shown 
 ## Layout
 
 ```
-src/lib/game/       types, engine (rounds, judging, stats, share), deck (no-repeat shuffle, daily pick), normalize
+src/lib/game/       types, engine (rounds, judging, stats, share), deck (no-repeat shuffle, daily pick), normalize,
+                    search (guess search), translit (romanizing other alphabets for search)
 src/lib/sources/    deezer (client), deezer-core (shared allowlist/limit/cache), csv, links, match, importer
 src/lib/server/     deezer.ts: the web version's server-side client
 src/lib/audio/      player.svelte.ts (Web Audio clips), silence.ts (skip leading quiet)
@@ -71,11 +72,22 @@ The Mac app hides its title bar (`src-tauri/tauri.macos.conf.json`); `html.mac-a
 sidebar and toolbar leave room for the window buttons, and those strips are `data-tauri-drag-region`.
 Check 375 px wide and 1100 px, light and dark.
 
+## Searching other alphabets
+
+`translit.ts` romanizes Cyrillic, Greek, Armenian, Georgian, Hebrew, Arabic/Persian/Urdu, nine Indic scripts (one
+offset table), Thai, Hangul (with nasal assimilation), Japanese kana (Hepburn) and Chinese (pinyin-pro, loaded on
+demand by `prepareSearch` only when a playlist has Chinese titles). `search.ts` matches the query against the
+title as written, its romanization after `loose()` (which merges spellings romanizations disagree on: ya/ja/ia,
+kh/h, ch/ts, sh/sch, voiced/unvoiced, doubles; "ou" is tried as both o and u), and for Hebrew/Arabic consonants
+only. Kanji in Japanese titles need a dictionary and aren't romanized. Every case is in `translit.test.ts`.
+
 ## Keyboard shortcuts
 
-Actions and defaults are in `src/lib/keys.ts` (Enter guess or skip, Shift+Enter skip, Space play, Enter next song
+Actions and defaults are in `src/lib/keys.ts` (Enter pick then guess, Shift+Enter skip, Space play, Enter next song
 after a round, / search, S share, M mode, ? help); the play screen's `onkeydown` runs them and Settings records
-new ones (`ShortcutSettings.svelte`). Rules: letters, symbols and Space don't fire while typing (Space does while
+new ones (`ShortcutSettings.svelte`). Enter: the first press picks the highlighted song, the second guesses it; on an empty search it skips only on a
+second press within 2 s, and is ignored for 0.9 s after a guess (habitual double presses). Rules: letters, symbols
+and Space don't fire while typing (Space does while
 the guess search is empty); a keyboard-focused button keeps its own Enter and Space; Play, Skip and the segmented
 controls don't take focus on click, so typing and Enter carry on. Clashes are refused only between actions that
 can run at the same time (Guess and Next Song both use Enter). Tab and Escape can't be shortcuts.
